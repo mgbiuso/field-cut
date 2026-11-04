@@ -29,7 +29,7 @@ It should end with `ALL CHECKS PASSED`.
 Copy `original/index.html` and `original/rec-worklet.js` over the ones in the main folder. That puts the app back exactly as you first saved it. (Fonts would then load from Google again.)
 
 ## Your saved work
-Right now clips and settings are remembered inside the browser. If you clear your browser data, they are lost. A save-to-file option is planned.
+Click Save project (or press Cmd+S) to save your clips, grades and crops to a small file ending in `.fieldcut.json`. Click Open project, or drop that file onto the page, to bring it back. The file holds settings only. Your video files stay where they are, so drop the videos in again and Field Cut matches them by name and size. The browser also remembers your last session, but clearing browser data erases that, so use the project file for anything you care about.
 
 ## Credits
 Fonts: IBM Plex, SIL Open Font License 1.1 (see `fonts/LICENSE.txt`). MP4 writing: mp4-muxer, bundled in `index.html`.

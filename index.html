@@ -154,6 +154,8 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
     <div class="brand" id="brand"><i></i>Field Cut</div>
     <div class="event"><label for="eventName">Event</label><input id="eventName" type="text" value="Election Night" spellcheck="false"></div>
     <button class="btn primary" id="loadBtn" type="button">Load footage</button>
+    <button class="btn" id="saveProjBtn" type="button" title="Save clips, grades and crops to a file (Cmd+S)">Save project</button>
+    <button class="btn" id="openProjBtn" type="button" title="Open a saved project file">Open project</button>
     <button class="btn" id="helpBtn" type="button">Shortcuts</button>
   </header>
 
@@ -163,6 +165,7 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
         <h2>Footage <span id="srcCount">0 files</span></h2>
         <div class="list" id="srcList"></div>
         <p class="hint" id="srcHint">Drop video files anywhere, or use Load footage. Nothing is uploaded; files stay on your computer.</p>
+        <p class="note" id="pendingNote" hidden></p>
       </section>
       <section class="sect">
         <h2>Clips <span id="clipCount">0 clips</span></h2>
@@ -349,6 +352,7 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
       <kbd>\</kbd><span>Before / after</span>
       <kbd>1 2 3 4</kbd><span>16:9, 9:16, 4:5, 1:1</span>
       <kbd>Esc</kbd><span>Back to the source (deselect clip)</span>
+      <kbd>Cmd + S</kbd><span>Save project to a file</span>
     </div>
     <h3>Fast workflow</h3>
     <ol class="steps">
@@ -363,6 +367,7 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
 </div>
 <div class="toast" id="toast" hidden></div>
 <input type="file" id="file" accept="video/*,.mov,.mp4,.m4v" multiple hidden>
+<input type="file" id="projFile" accept=".json,application/json" hidden>
 <video id="vid" playsinline preload="auto"></video>
 <video id="tv" playsinline muted preload="auto"></video>
 
@@ -2520,6 +2525,8 @@ function drawMeter(){
 
 /* ---------- loading footage ---------- */
 function addFiles(files){
+  files=[...files];const pj=files.find(f=>/\.json$/i.test(f.name));
+  if(pj){const rest=files.filter(f=>f!==pj);openProject(pj).then(()=>{if(rest.length)addFiles(rest)});return}
   const list=[...files].filter(f=>/^video\//.test(f.type)||/\.(mov|mp4|m4v)$/i.test(f.name));
   if(!list.length){toast('Those files are not videos. Use MP4 or MOV.');return}
   ensureAudio();
@@ -2571,7 +2578,7 @@ function renderSources(){
     const d=document.createElement('div');d.style.minWidth='0';const n=document.createElement('div');n.className='nm';n.textContent=s.name;
     const m=document.createElement('div');m.className='meta';const cn=clips.filter(c=>c.src===s.id).length;m.textContent=`${dur(s.dur)} · ${s.h>=2000||s.w>=3000?'4K':s.h+'p'} · ${cn} clip${cn===1?'':'s'}`;
     d.append(n,m);b.append(cv,d);b.onclick=()=>{cur.clip=null;selectSource(s.id);renderClips()};L.append(b)}
-  $('#srcCount').textContent=sources.length+(sources.length===1?' file':' files');$('#srcHint').hidden=sources.length>0;
+  $('#srcCount').textContent=sources.length+(sources.length===1?' file':' files');$('#srcHint').hidden=sources.length>0;updatePending();
 }
 function renderClips(){
   const L=$('#clipList');L.textContent='';
@@ -2954,6 +2961,64 @@ $('#shotBtn').onclick=async()=>{
   const lines=[`${P.event}: shot list`,''];clips.forEach((c,i)=>{const s=srcById(c.src);const f=fpsOf(s);lines.push(`${String(i+1).padStart(2,'0')}  ${c.name}  |  ${s.name}  |  IN ${tc(c.in,f)}  OUT ${tc(c.out,f)}  |  ${dur(c.out-c.in)}`)});
   const txt=lines.join('\n');try{await navigator.clipboard.writeText(txt);toast('Shot list copied')}catch(e){const ta=document.createElement('textarea');ta.value=txt;document.body.append(ta);ta.select();try{document.execCommand('copy');toast('Shot list copied')}catch(_){toast('Copy blocked: select the text and copy it')}ta.remove()}
 };
+
+/* ---------- project file (Save project / Open project) ---------- */
+// The file holds text only: settings, clips and grades. The video files stay where they are and are matched by name|size.
+const PROJ_VERSION=1;
+let pendingProj=[];
+const okNum=n=>typeof n==='number'&&isFinite(n);
+// Copy saved values onto fresh defaults. Unknown keys and wrong types are ignored, so old or odd files still open.
+function mergeS(base,saved){if(!saved||typeof saved!=='object')return base;for(const k in saved){if(!(k in base))continue;const b=base[k],v=saved[k];if(b&&typeof b==='object'&&!Array.isArray(b))mergeS(b,v);else if(typeof v===typeof b)base[k]=v}return base}
+function cleanSrc(v){v=v&&typeof v==='object'?v:{};
+  return {name:String(v.name||''),size:okNum(v.size)?v.size:0,s:mergeS(defS(),v.s),
+    clips:(Array.isArray(v.clips)?v.clips:[]).filter(c=>c&&okNum(c.in)&&okNum(c.out)&&c.in>=0&&c.out>c.in).map(c=>({name:String(c.name||'Clip'),in:c.in,out:c.out,s:mergeS(defS(),c.s),on:c.on!==false}))}}
+function projectData(){
+  const srcs={};
+  for(const s of sources)srcs[s.key]={name:s.name,size:s.size,s:s.s,clips:clips.filter(c=>c.src===s.id).map(c=>({name:c.name,in:c.in,out:c.out,s:c.s,on:c.on}))};
+  return {app:'field-cut',version:PROJ_VERSION,savedAt:new Date().toISOString(),event:P.event,wm:P.wm,exp:P.exp,srcs};
+}
+async function saveProject(){
+  if(!sources.length){toast('Load footage first, then save the project');return}
+  const text=JSON.stringify(projectData(),null,1),name=slug(P.event)+'.fieldcut.json';
+  try{
+    if(window.showSaveFilePicker){
+      const h=await showSaveFilePicker({suggestedName:name,types:[{description:'Field Cut project',accept:{'application/json':['.json']}}]});
+      const w=await h.createWritable();await w.write(text);await w.close();
+    }else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+    toast('Project saved: '+name);
+  }catch(e){if(e&&e.name==='AbortError')return;toast('Could not save the project: '+(e.message||e),5000)}
+}
+function updatePending(){
+  pendingProj=pendingProj.filter(p=>!sources.some(s=>s.key===p.key));
+  const n=$('#pendingNote');n.hidden=!pendingProj.length;
+  if(pendingProj.length)n.textContent=`Project is waiting for ${pendingProj.length} ${pendingProj.length===1?'file':'files'}. Drop ${pendingProj.length===1?'it':'them'} here: ${pendingProj.map(p=>p.name||p.key.split('|')[0]).join(', ')}`;
+}
+async function openProject(file){
+  let o;try{o=JSON.parse(await file.text())}catch(e){toast('That file is not a Field Cut project');return}
+  if(!o||o.app!=='field-cut'||!o.srcs||typeof o.srcs!=='object'){toast('That file is not a Field Cut project');return}
+  if(o.version>PROJ_VERSION)toast('Saved by a newer Field Cut. Opening what it can.',4000);
+  if(typeof o.event==='string')P.event=o.event;
+  if(o.wm&&typeof o.wm==='object')Object.assign(P.wm,o.wm);
+  if(o.exp&&typeof o.exp==='object'){Object.assign(P.exp,o.exp);P.exp.aspects=(Array.isArray(P.exp.aspects)?P.exp.aspects:['16:9']).filter(a=>ASPK.includes(a));if(!P.exp.aspects.length)P.exp.aspects=['16:9']}
+  $('#eventName').value=P.event;$('#expQ').value=P.exp.q;$('#expMode').value=P.exp.mode;$('#expSpeed').value=P.exp.speed||'live';$('#expListen').checked=P.exp.listen;
+  const prev=store.get('fc_proj')||{},keep={};let found=0,missing=0;
+  pendingProj=[];
+  for(const key of Object.keys(o.srcs)){
+    const v=cleanSrc(o.srcs[key]);keep[key]={s:v.s,clips:v.clips};
+    const s=sources.find(x=>x.key===key);
+    if(s){clips=clips.filter(c=>c.src!==s.id);if(cur.clip&&!curClip())cur.clip=null;s.s=v.s;
+      v.clips.forEach(c=>clips.push({id:uid(),src:s.id,name:c.name,in:c.in,out:Math.min(c.out,s.dur||c.out),s:c.s,on:c.on,thumb:null}));found++}
+    else{pendingProj.push({key,name:v.name});missing++}
+  }
+  // Waiting files get their clips back through the same path as the browser autosave (see addSource).
+  store.set('fc_proj',{event:P.event,wm:P.wm,exp:P.exp,srcs:Object.assign({},prev.srcs||{},keep)});
+  buildExpAsp();renderSources();renderClips();renderTarget();syncInspector();dirty=true;save();updatePending();
+  toast(missing?`Project opened. Waiting for ${missing} ${missing===1?'file':'files'}.`:`Project opened. ${found} ${found===1?'file':'files'} matched.`,4000);
+}
+$('#saveProjBtn').onclick=saveProject;
+$('#openProjBtn').onclick=()=>$('#projFile').click();
+$('#projFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)openProject(f)};
+addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&(e.key||'').toLowerCase()==='s'){e.preventDefault();saveProject()}});
 
 /* ---------- wiring ---------- */
 function setAspect(a){view.aspect=a;$$('#aspSeg button').forEach(b=>b.classList.toggle('on',b.dataset.a===a));syncInspector()}
