@@ -34,8 +34,16 @@ Click Save project (or press Cmd+S) to save your clips, grades and crops to a sm
 ## Credits
 Fonts: IBM Plex, SIL Open Font License 1.1 (see `fonts/LICENSE.txt`). MP4 writing: mp4-muxer, bundled in `index.html`.
 
-## Still to test (deferred on Nov. 4, 2026)
+## How exporting works now
+Export is fast: about as long as the clip, for all sizes at once (a 30 second clip at 4 sizes took 33 seconds on a 2019 Intel MacBook). Every frame is kept. Field Cut reads the picture straight out of your MP4 or MOV and records the sound while that happens. Keep the tab open and in front until it finishes.
+
+If Field Cut cannot read a file this way (an unusual codec, or a fragmented MP4), it says so and uses a slower backup mode that jumps to every frame. That mode can repeat a few frames near the start of a clip, so treat it as a rare fallback.
+
+The console (Chrome menu, View, Developer, JavaScript Console) prints a line starting FCTIMING after each export with where the time went.
+
+## Still to test
 - Wi-Fi-off run: open the page with Wi-Fi off and repeat load, mark, grade, export.
-- A MOV from the iPhone (only an R10 MP4 has been tested so far).
+- A MOV from the iPhone (only an R10 MP4 has been tested so far). iPhone files may use HEVC, which Fast export tries to read. If it cannot, it falls back automatically.
 - Save one exported file and watch it: check picture and sound are in sync.
-- Real time export skipped 74 of about 210 frames on a 7 second clip. Frame-accurate skipped none but took about 60 seconds for 4 sizes. Faster exports is Phase 2.
+- A clip of 5 minutes, to confirm timing and memory at your longest expected length.
+- Safari (optional).

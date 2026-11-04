@@ -23,3 +23,8 @@ Built from `original/index.html` (3,018 lines, 1 MB). Line numbers are for the w
 2. **`window.claude` downloads** (2898-2907): used only if present. Outside Claude, the code already falls back to a normal browser download link, so standalone use works. Keep the fallback, drop the Claude-only branch later.
 3. **Project saving today** (2936-2950): stored in the browser's localStorage under `fc_proj`. It saves event name, watermark, export settings, and clips by file key. If Mike clears browser data, it is gone. Phase 2 adds a real project file.
 4. Two comment links (stackoverflow, multimedia.cx) are harmless.
+
+## Added Nov. 4, 2026 (line numbers above are from before these edits)
+- **Save / Open project**: search `project file (Save project / Open project)` in `index.html`.
+- **Fast export**: search `fast export: read the MP4 ourselves`. `readMp4` reads the frame list, `fastDecodeClip` decodes one clip with WebCodecs, `exportJob` runs it alongside the real-time sound recording. The old frame-by-frame mode (`seekFrame`, "pass 2") is kept only as the automatic backup.
+- The Real time mode and the Speed menu were removed.

@@ -312,9 +312,8 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
           <h2>Settings</h2>
           <div class="field"><label for="expQ">Quality</label><select id="expQ"><option value="10">Standard, 10 Mbps (smaller files)</option><option value="16">High, 16 Mbps</option><option value="24">Master, 24 Mbps</option></select></div>
           <div class="field"><label for="expMode">Clips</label><select id="expMode"><option value="each">Each ticked clip as its own file</option><option value="join">Join ticked clips into one video</option></select></div>
-          <div class="field"><label for="expSpeed">Speed</label><select id="expSpeed"><option value="live">Real time (fastest)</option><option value="accurate">Frame-accurate (slower, never skips a frame)</option></select></div>
           <label class="check"><input type="checkbox" id="expListen"><span>Play sound while exporting</span></label>
-          <p class="note">Real time: a 30 second clip takes about 30 seconds, for every size at once. Keep this tab open and in front until it finishes. If the result says frames were skipped, switch to Frame-accurate.</p>
+          <p class="note">A 30 second clip takes about 30 seconds, for every size at once. Keep this tab open and in front until it finishes. Every frame is kept.</p>
           <button class="btn primary" id="expBtn" type="button">Export ticked clips</button>
           <p class="hint" id="expSum"></p>
         </section>
@@ -2294,7 +2293,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- state ---------- */
 let sources=[], clips=[], cur={src:null,clip:null}, marks={in:null,out:null};
 let view={aspect:'16:9',mode:'guide',compare:false,zebra:false,safe:false,tab:'color'};
-let P={event:'Election Night',wm:{on:false,text:'Video: Mike Biuso',pos:'br',size:3,op:85},exp:{aspects:['16:9'],q:'16',mode:'each',listen:false,speed:'live'}};
+let P={event:'Election Night',wm:{on:false,text:'Video: Mike Biuso',pos:'br',size:3,op:85},exp:{aspects:['16:9'],q:'16',mode:'each',listen:false}};
 let gradeClip=null, exporting=false, playingClip=null, dirty=true, results=[];
 const vid=$('#vid'), tv=$('#tv');
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -2807,7 +2806,7 @@ function makeAudioSink(aenc,sr){
   };
 }
 function expSummary(){const n=clips.filter(c=>c.on).length;const t=clips.filter(c=>c.on).reduce((a,c)=>a+c.out-c.in,0);const k=P.exp.aspects.length;const files=P.exp.mode==='join'?k:n*k;
-  $('#expSum').textContent=n?`${n} clip${n>1?'s':''}, ${dur(t)} total, ${k} size${k>1?'s':''}: ${files} file${files>1?'s':''}. Takes about ${P.exp.speed==='accurate'?dur(t*2.5+n*2)+' or more':dur(t+n*1.5)}.`:'Tick at least one clip in the Clips list.';
+  $('#expSum').textContent=n?`${n} clip${n>1?'s':''}, ${dur(t)} total, ${k} size${k>1?'s':''}: ${files} file${files>1?'s':''}. Takes about ${dur(t+n*1.5)}.`:'Tick at least one clip in the Clips list.';
   $('#expBtn').disabled=!n||!k||exporting}
 function buildExpAsp(){const box=$('#expAsp');box.textContent='';
   for(const a of ASPK){const[w,h]=ASP[a];const l=document.createElement('label');l.className='check';const i=document.createElement('input');i.type='checkbox';i.id='ea_'+a.replace(':','x');i.checked=P.exp.aspects.includes(a);
@@ -2837,9 +2836,77 @@ async function seekFrame(t){
   await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r()}};vid.requestVideoFrameCallback(f);setTimeout(f,60)});
   TM.seek+=performance.now()-t0;
 }
+/* ---------- fast export: read the MP4 ourselves, decode frames with WebCodecs (no seeking, no skipped frames) ---------- */
+const u32=(d,o)=>d.getUint32(o),fcc=(d,o)=>String.fromCharCode(d.getUint8(o),d.getUint8(o+1),d.getUint8(o+2),d.getUint8(o+3));
+function* kids(d,s,e){while(s+8<=e){let sz=u32(d,s),hl=8;if(sz===1){sz=u32(d,s+8)*4294967296+u32(d,s+12);hl=16}else if(sz===0)sz=e-s;if(sz<hl||s+sz>e)return;yield{t:fcc(d,s+4),s:s+hl,e:s+sz};s+=sz}}
+const kid=(d,b,t)=>{for(const k of kids(d,b.s,b.e))if(k.t===t)return k;return null};
+function hevcCodec(c){const b=c,sp=['','A','B','C'][b[1]>>6],pr=b[1]&31,tier=(b[1]&32)?'H':'L';let cf=(b[2]<<24|b[3]<<16|b[4]<<8|b[5])>>>0,r=0;for(let i=0;i<32;i++){r=(r<<1)|((cf>>i)&1)}r>>>=0;
+  const cons=[...b.slice(6,12)];while(cons.length&&!cons[cons.length-1])cons.pop();return`hvc1.${sp}${pr}.${r.toString(16)}.${tier}${b[12]}${cons.map(x=>'.'+x.toString(16)).join('')}`}
+/* Reads the frame list of the first video track. Throws if the file is not a plain MP4/MOV we understand (then export falls back to the slower mode). */
+async function readMp4(file){
+  let pos=0,moov=null;
+  while(pos<file.size){const h=new DataView(await file.slice(pos,pos+16).arrayBuffer());let sz=u32(h,0),t=fcc(h,4);if(sz===1)sz=u32(h,8)*4294967296+u32(h,12);else if(sz===0)sz=file.size-pos;
+    if(t==='moof')throw new Error('fragmented MP4');if(t==='moov'){moov=pos;var msz=sz;break}if(sz<8)throw new Error('bad box');pos+=sz}
+  if(moov==null)throw new Error('no moov');
+  const buf=await file.slice(moov,moov+msz).arrayBuffer(),d=new DataView(buf);
+  const root={s:8,e:msz};let trak=null;
+  for(const k of kids(d,root.s,root.e))if(k.t==='trak'){const m=kid(d,k,'mdia'),hd=m&&kid(d,m,'hdlr');if(hd&&fcc(d,hd.s+8)==='vide'){trak=k;break}}
+  if(!trak)throw new Error('no video track');
+  const mdia=kid(d,trak,'mdia'),mdhd=kid(d,mdia,'mdhd'),ts=mdhd? (d.getUint8(mdhd.s)===1?u32(d,mdhd.s+20):u32(d,mdhd.s+12)):0;if(!ts)throw new Error('no timescale');
+  let shift=0;const edts=kid(d,trak,'edts'),elst=edts&&kid(d,edts,'elst');
+  if(elst){const v=d.getUint8(elst.s),n=u32(d,elst.s+4);let o=elst.s+8;for(let i=0;i<n;i++){const mt=v===1?d.getInt32(o+8)*4294967296+u32(d,o+12):d.getInt32(o+4);o+=v===1?20:12;if(mt>=0){shift=mt;break}}}
+  const stbl=kid(d,kid(d,mdia,'minf'),'stbl'),stsd=kid(d,stbl,'stsd');
+  const ent=stsd.s+8,etype=fcc(d,ent+4),esz=u32(d,ent),w=d.getUint16(ent+8+24),h=d.getUint16(ent+8+26);
+  let cfg,desc=null;
+  if(etype==='avc1'||etype==='avc3'){const bx=kid(d,{s:ent+8+78,e:ent+esz},'avcC');if(!bx)throw new Error('no avcC');desc=new Uint8Array(buf,bx.s,bx.e-bx.s);
+    const hx=i=>desc[i].toString(16).padStart(2,'0');cfg={codec:`avc1.${hx(1)}${hx(2)}${hx(3)}`,codedWidth:w,codedHeight:h,description:desc}}
+  else if(etype==='hvc1'||etype==='hev1'){const bx=kid(d,{s:ent+8+78,e:ent+esz},'hvcC');if(!bx)throw new Error('no hvcC');desc=new Uint8Array(buf,bx.s,bx.e-bx.s);
+    cfg={codec:hevcCodec(desc.subarray(1)),codedWidth:w,codedHeight:h,description:desc}}
+  else throw new Error('codec '+etype);
+  cfg.optimizeForLatency=true;
+  if(!(await VideoDecoder.isConfigSupported(cfg)).supported)throw new Error('decoder cannot play '+cfg.codec);
+  // sample tables
+  const T=n=>{const b=kid(d,stbl,n);return b};
+  const stts=T('stts'),ctts=T('ctts'),stss=T('stss'),stsz=T('stsz'),stsc=T('stsc'),stco=T('stco')||T('co64'),co64=!T('stco');
+  if(!stts||!stsz||!stsc||!stco)throw new Error('missing tables');
+  const N=u32(d,stsz.s+8),fixed=u32(d,stsz.s+4),size=i=>fixed||u32(d,stsz.s+12+i*4);
+  const dts=new Array(N),cto=new Int32Array(N);
+  {let i=0,t=0;const n=u32(d,stts.s+4);for(let k=0;k<n;k++){const c=u32(d,stts.s+8+k*8),dl=u32(d,stts.s+12+k*8);for(let j=0;j<c&&i<N;j++){dts[i++]=t;t+=dl}}}
+  if(ctts){let i=0;const n=u32(d,ctts.s+4);for(let k=0;k<n;k++){const c=u32(d,ctts.s+8+k*8),o=d.getInt32(ctts.s+12+k*8);for(let j=0;j<c&&i<N;j++)cto[i++]=o}}
+  const keys=new Set();if(stss){const n=u32(d,stss.s+4);for(let k=0;k<n;k++)keys.add(u32(d,stss.s+8+k*4)-1)}
+  const nch=u32(d,stco.s+4),nsc=u32(d,stsc.s+4);
+  const off=new Array(N);{let i=0;for(let c=0;c<nch&&i<N;c++){let spc=0;for(let k=0;k<nsc;k++){if(u32(d,stsc.s+8+k*12)<=c+1)spc=u32(d,stsc.s+12+k*12);else break}
+    let o=co64?u32(d,stco.s+8+c*8)*4294967296+u32(d,stco.s+12+c*8):u32(d,stco.s+8+c*4);for(let j=0;j<spc&&i<N;j++){off[i]=o;o+=size(i);i++}}}
+  const samples=new Array(N);for(let i=0;i<N;i++)samples[i]={off:off[i],size:size(i),key:stss?keys.has(i):true,t:(dts[i]+cto[i]-shift)/ts};
+  if(N<2||samples.some(x=>x.off==null))throw new Error('bad sample tables');
+  // frame rate from the most common step between frames
+  const steps=new Map();for(let i=1;i<N;i++){const dl=dts[i]-dts[i-1];steps.set(dl,(steps.get(dl)||0)+1)}
+  let best=0,bc=0;for(const[k,v]of steps)if(v>bc){bc=v;best=k}
+  return{cfg,samples,fps:best?ts/best:30}}
+async function* sampleBytes(file,list){let i=0;
+  while(i<list.length){let j=i,a=list[i].off,b=a+list[i].size;while(j+1<list.length&&list[j+1].off===b&&b-a<4e6){j++;b+=list[j].size}
+    const buf=new Uint8Array(await file.slice(a,b).arrayBuffer());for(let k=i;k<=j;k++)yield buf.subarray(list[k].off-a,list[k].off-a+list[k].size);i=j+1}}
+/* Decodes one clip straight to the encoders. Starts at the keyframe before the In point, stops after the Out point. */
+async function fastDecodeClip(src,c,seq,outs){
+  const dm=src.dm,cd=c.out-c.in,S=dm.samples;let tgt=-1,end=-1;
+  for(let i=0;i<S.length;i++){const t=S[i].t;if(t>=c.in-1e-4&&(tgt<0||t<S[tgt].t))tgt=i;if(t<c.out-1e-4)end=i}
+  if(tgt<0||end<tgt)return 0;
+  let k0=tgt;while(k0>0&&!S[k0].key)k0--;
+  let err=null,n=0;
+  const dec=new VideoDecoder({output:f=>{try{const rel=f.timestamp/1e6-c.in;if(rel>-1e-4&&rel<cd-1e-4){const r0=Math.max(0,rel);renderOuts(outs,c,src,r0,cd,Math.round(seq+r0*1e6),f);n++}}catch(e){err=e}f.close()},error:e=>err=e});
+  dec.configure(dm.cfg);
+  const list=S.slice(k0,end+1);let i=0;
+  for await(const bytes of sampleBytes(src.file,list)){
+    if(err)throw err;
+    while(dec.decodeQueueSize>8||outs.some(o=>o.enc.encodeQueueSize>6)){await new Promise(r=>setTimeout(r,2));if(err)throw err}
+    const s=list[i++];dec.decode(new EncodedVideoChunk({type:s.key?'key':'delta',timestamp:Math.round(s.t*1e6),data:bytes}))}
+  await dec.flush();dec.close();if(err)throw err;return n}
 async function exportJob(job,box){
   const T0=performance.now();Object.assign(TM,{seek:0,upload:0,draw:0,overlay:0,encode:0,n:0});
-  const total=job.clips.reduce((a,c)=>a+c.out-c.in,0);const br=+P.exp.q*1e6;const accurate=P.exp.speed==='accurate';
+  const total=job.clips.reduce((a,c)=>a+c.out-c.in,0);const br=+P.exp.q*1e6;let fast=!!window.VideoDecoder;
+  if(fast){for(const sid of new Set(job.clips.map(c=>c.src))){const sc=srcById(sid);if(sc.dm===undefined){try{sc.dm=await readMp4(sc.file);sc.fps=sc.dm.fps}catch(e){sc.dm=null;console.log('Fast export not possible for '+sc.name+': '+e.message)}}if(!sc.dm)fast=false}
+    if(!fast)toast('Fast export is not possible for this file. Using the slower backup mode.',5000)}
+  const accurate=!fast;
   const sr=AC.sampleRate;const ap=await pickAudio(sr);
   const outs=[];
   for(const asp of P.exp.aspects){const[w,h]=ASP[asp];const vc=await pickCodec(w,h,asp==='16:9'?br:Math.round(br*.85));if(!vc)throw new Error('This browser cannot encode H.264 video');
@@ -2857,7 +2924,11 @@ async function exportJob(job,box){
   if(aenc)aenc.configure(ap.cfg);
   const sink=aenc?makeAudioSink(aenc,sr):null;recSink=sink?m=>sink.push(m):null;
   const prog=(p,label)=>{for(const o of outs){o.bar.style.width=(clamp(p,0,1)*100).toFixed(1)+'%';o.st.textContent=`${label} ${Math.round(clamp(p,0,1)*100)}%`;if(o.err)throw o.err}};
-  let dropped=0,frames=0;
+  let frames=0;
+  /* fast mode: the picture is decoded at full speed while the sound is recorded in real time (pass 1, below) */
+  let fastP=null;
+  if(fast){const starts=[];let q=0;for(const c of job.clips){starts.push(q);q+=(c.out-c.in)*1e6}
+    fastP=(async()=>{for(let i=0;i<job.clips.length;i++){const c=job.clips[i];frames+=await fastDecodeClip(srcById(c.src),c,starts[i],outs)}})();fastP.catch(()=>{})}
   /* pass 1: play each clip in real time. Captures audio, and renders video too unless frame-accurate is on */
   {let seq=0,done=0;
   for(const c of job.clips){
@@ -2867,7 +2938,7 @@ async function exportJob(job,box){
     vid.currentTime=c.in;await once(vid,'seeked');
     let win=null;const ds=[];
     await new Promise((res,rej)=>{
-      let first=true,lastTs=-1,lastPF=null,lastMT=null,fin=false;
+      let first=true,lastMT=null,fin=false;
       const finish=()=>{if(fin)return;fin=true;vid.pause();vid.removeEventListener('ended',finish);res()};
       vid.addEventListener('ended',finish);
       const cb=(now,m)=>{if(fin)return;try{const rel=m.mediaTime-c.in;
@@ -2876,10 +2947,7 @@ async function exportJob(job,box){
         const r0=Math.max(0,rel);
         if(first){first=false;if(sink){const ct=ctxTimeFor(m.expectedDisplayTime||now);win=sink.open(Math.round(ct*sr),Math.round((cd-r0)*sr),seq+r0*1e6)}}
         if(lastMT!=null&&m.mediaTime>lastMT)ds.push(m.mediaTime-lastMT);lastMT=m.mediaTime;
-        if(lastPF!=null&&m.presentedFrames-lastPF>1)dropped+=m.presentedFrames-lastPF-1;lastPF=m.presentedFrames;
         A.fade.gain.setTargetAtTime(fadeAt(c.s,r0,cd),AC.currentTime,.012);
-        const ts=Math.round(seq+r0*1e6);
-        if(!accurate&&ts>lastTs){lastTs=ts;renderOuts(outs,c,src,r0,cd,ts);frames++}
         prog((done+r0)/total*(accurate?.3:1),accurate?'Recording sound':'Rendering');
         vid.requestVideoFrameCallback(cb)}catch(e){fin=true;vid.pause();rej(e)}};
       vid.requestVideoFrameCallback(cb);vid.play().catch(rej);
@@ -2888,6 +2956,7 @@ async function exportJob(job,box){
     if(ds.length>5){ds.sort((a,b)=>a-b);const f=1/ds[ds.length>>1];src.fps=[23.976,24,25,29.97,30,50,59.94,60].reduce((a,b)=>Math.abs(b-f)<Math.abs(a-f)?b:a)}
     seq+=cd*1e6;done+=cd;
   }}
+  if(fastP)await fastP
   if(aerr)throw aerr;
   /* pass 2 (frame-accurate): step through every frame, so nothing is skipped no matter how slow the machine is */
   if(accurate){let seq=0,done=0;
@@ -2899,7 +2968,7 @@ async function exportJob(job,box){
         renderOuts(outs,c,src,rel,cd,Math.round(seq+rel*1e6));frames++;
         if(k%3===0)prog(.3+.7*(done+rel)/total,'Rendering frames')}
       seq+=cd*1e6;done+=cd}
-    dropped=0}
+    }
   recSink=null;const T1=performance.now();
   for(const o of outs){o.st.textContent='Finishing';await o.enc.flush();o.enc.close()}
   if(aenc){await aenc.flush();aenc.close()}
@@ -2907,10 +2976,8 @@ async function exportJob(job,box){
     const r={fname:o.fname,blob,saved:false};results.push(r);window.__exports=results;
     o.bar.style.width='100%';const mb=(blob.size/1048576).toFixed(1);
     o.st.textContent=`${mb} MB, ${dur(total)}${o.warn?'. Fallback codec used: may not open in QuickTime':''}`;
-    if(dropped>Math.max(2,frames*.005)){o.st.textContent+=`. ${dropped} frames skipped: export again with Frame-accurate on.`;o.st.style.color='var(--warn)'}
     o.btn.textContent='Save';o.btn.disabled=false;o.btn.onclick=()=>saveResult(r,o.btn)}
-  window.__timing={mode:P.exp.speed,sizes:P.exp.aspects.length,clipSec:+total.toFixed(1),frames,dropped,totalSec:+((performance.now()-T0)/1000).toFixed(1),beforeFlushSec:+((T1-T0)/1000).toFixed(1),seekSec:+(TM.seek/1000).toFixed(1),uploadSec:+(TM.upload/1000).toFixed(1),drawSec:+(TM.draw/1000).toFixed(1),overlaySec:+(TM.overlay/1000).toFixed(1),encodeCallSec:+(TM.encode/1000).toFixed(1)};console.log('FCTIMING '+JSON.stringify(window.__timing));
-  if(dropped>Math.max(2,frames*.005))toast(`${dropped} frames were skipped. Turn on Frame-accurate in Export settings and export again.`,7000);
+  window.__timing={mode:fast?'fast':'backup',sizes:P.exp.aspects.length,clipSec:+total.toFixed(1),frames,totalSec:+((performance.now()-T0)/1000).toFixed(1),beforeFlushSec:+((T1-T0)/1000).toFixed(1),seekSec:+(TM.seek/1000).toFixed(1),uploadSec:+(TM.upload/1000).toFixed(1),drawSec:+(TM.draw/1000).toFixed(1),overlaySec:+(TM.overlay/1000).toFixed(1),encodeCallSec:+(TM.encode/1000).toFixed(1)};console.log('FCTIMING '+JSON.stringify(window.__timing));
 }
 let DL=null,dlTried=false;
 async function getDL(){if(dlTried)return DL;dlTried=true;try{DL=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){DL=null}return DL}
@@ -2923,10 +2990,10 @@ async function saveResult(r,btn){
 }
 $('#saveAll').onclick=async()=>{for(const r of results.filter(r=>!r.saved)){const ok=await saveResult(r,null);if(!ok)break}
   $$('#jobs .job').forEach(row=>{const fn=row.querySelector('.fn').textContent;const r=results.find(x=>x.fname===fn);if(r&&r.saved){const b=row.querySelector('button');b.textContent='Saved';b.disabled=true}})};
-function renderOuts(outs,c,src,rel,cd,ts){
+function renderOuts(outs,c,src,rel,cd,ts,frame){
   const maxW=Math.max(...outs.map(o=>o.w)),maxH=Math.max(...outs.map(o=>o.h));
   if(glExp.width!==maxW||glExp.height!==maxH){glExp.width=maxW;glExp.height=maxH}
-  let a=performance.now();RE.upload(vid);const fade=fadeAt(c.s,rel,cd);TM.upload+=performance.now()-a;TM.n++;
+  let a=performance.now();RE.upload(frame||vid);const fade=fadeAt(c.s,rel,cd);TM.upload+=performance.now()-a;TM.n++;
   for(const o of outs){
     a=performance.now();RE.draw({vp:[0,maxH-o.h,o.w,o.h],crop:cropFor(src,c.s,o.asp,rel,cd),s:c.s,fade,time:rel});
     o.ctx.drawImage(glExp,0,0,o.w,o.h,0,0,o.w,o.h);TM.draw+=performance.now()-a;a=performance.now();overlays(o.ctx,o.w,o.h,o.asp,c.s,rel,true);TM.overlay+=performance.now()-a;a=performance.now();
@@ -3004,7 +3071,7 @@ async function openProject(file){
   if(typeof o.event==='string')P.event=o.event;
   if(o.wm&&typeof o.wm==='object')Object.assign(P.wm,o.wm);
   if(o.exp&&typeof o.exp==='object'){Object.assign(P.exp,o.exp);P.exp.aspects=(Array.isArray(P.exp.aspects)?P.exp.aspects:['16:9']).filter(a=>ASPK.includes(a));if(!P.exp.aspects.length)P.exp.aspects=['16:9']}
-  $('#eventName').value=P.event;$('#expQ').value=P.exp.q;$('#expMode').value=P.exp.mode;$('#expSpeed').value=P.exp.speed||'live';$('#expListen').checked=P.exp.listen;
+  $('#eventName').value=P.event;$('#expQ').value=P.exp.q;$('#expMode').value=P.exp.mode;$('#expListen').checked=P.exp.listen;
   const prev=store.get('fc_proj')||{},keep={};let found=0,missing=0;
   pendingProj=[];
   for(const key of Object.keys(o.srcs)){
@@ -3060,7 +3127,7 @@ $('#ctrBtn').onclick=()=>{const s=tgt();if(!s)return;s.frame[view.aspect]={x:.5,
 $('#frAll').onclick=()=>{const s=tgt();if(!s)return;const f=s.frame[view.aspect];for(const a of ASPK)s.frame[a]={x:f.x,y:f.y,z:a===view.aspect?f.z:1};toast('Framing copied to all sizes');saveSoon()};
 $('#expQ').value=P.exp.q;$('#expQ').onchange=e=>{P.exp.q=e.target.value;save()};
 $('#expMode').value=P.exp.mode;$('#expMode').onchange=e=>{P.exp.mode=e.target.value;save();expSummary()};
-$('#expSpeed').value=P.exp.speed||'live';$('#expSpeed').onchange=e=>{P.exp.speed=e.target.value;save();expSummary()};$('#expListen').checked=P.exp.listen;$('#expListen').onchange=e=>{P.exp.listen=e.target.checked;save()};
+$('#expListen').checked=P.exp.listen;$('#expListen').onchange=e=>{P.exp.listen=e.target.checked;save()};
 $('#expBtn').onclick=runExport;$('#stillBtn').onclick=saveStill;
 $('#helpBtn').onclick=()=>{$('#help').hidden=false;$('#helpClose').focus()};$('#helpClose').onclick=()=>$('#help').hidden=true;
 $('#help').onclick=e=>{if(e.target.id==='help')$('#help').hidden=true};
