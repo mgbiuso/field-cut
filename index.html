@@ -2840,8 +2840,11 @@ async function seekFrame(t){
 const u32=(d,o)=>d.getUint32(o),fcc=(d,o)=>String.fromCharCode(d.getUint8(o),d.getUint8(o+1),d.getUint8(o+2),d.getUint8(o+3));
 function* kids(d,s,e){while(s+8<=e){let sz=u32(d,s),hl=8;if(sz===1){sz=u32(d,s+8)*4294967296+u32(d,s+12);hl=16}else if(sz===0)sz=e-s;if(sz<hl||s+sz>e)return;yield{t:fcc(d,s+4),s:s+hl,e:s+sz};s+=sz}}
 const kid=(d,b,t)=>{for(const k of kids(d,b.s,b.e))if(k.t===t)return k;return null};
-function hevcCodec(c){const b=c,sp=['','A','B','C'][b[1]>>6],pr=b[1]&31,tier=(b[1]&32)?'H':'L';let cf=(b[2]<<24|b[3]<<16|b[4]<<8|b[5])>>>0,r=0;for(let i=0;i<32;i++){r=(r<<1)|((cf>>i)&1)}r>>>=0;
-  const cons=[...b.slice(6,12)];while(cons.length&&!cons[cons.length-1])cons.pop();return`hvc1.${sp}${pr}.${r.toString(16)}.${tier}${b[12]}${cons.map(x=>'.'+x.toString(16)).join('')}`}
+/* c = hvcC payload after its first byte: [0] profile space/tier/profile, [1..4] compatibility flags, [5..10] constraint flags, [11] level */
+function hevcCodec(c){const sp=['','A','B','C'][c[0]>>6],pr=c[0]&31,tier=(c[0]&32)?'H':'L';
+  let cf=((c[1]<<24)|(c[2]<<16)|(c[3]<<8)|c[4])>>>0,r=0;for(let i=0;i<32;i++){r=(r<<1)|((cf>>i)&1)}r>>>=0;
+  const cons=[...c.slice(5,11)];while(cons.length&&!cons[cons.length-1])cons.pop();
+  return`hvc1.${sp}${pr}.${r.toString(16).toUpperCase()}.${tier}${c[11]}${cons.map(x=>'.'+x.toString(16).toUpperCase()).join('')}`}
 /* Reads the frame list of the first video track. Throws if the file is not a plain MP4/MOV we understand (then export falls back to the slower mode). */
 async function readMp4(file){
   let pos=0,moov=null;
@@ -2852,6 +2855,9 @@ async function readMp4(file){
   const root={s:8,e:msz};let trak=null;
   for(const k of kids(d,root.s,root.e))if(k.t==='trak'){const m=kid(d,k,'mdia'),hd=m&&kid(d,m,'hdlr');if(hd&&fcc(d,hd.s+8)==='vide'){trak=k;break}}
   if(!trak)throw new Error('no video track');
+  // rotation: iPhones store portrait video sideways and add a rotation note (tkhd matrix) that players obey
+  let rot=0;{const tk=kid(d,trak,'tkhd');if(tk){const mo=tk.s+(d.getUint8(tk.s)===1?52:40),a=d.getInt32(mo)/65536,b=d.getInt32(mo+4)/65536,c=d.getInt32(mo+12)/65536,e=d.getInt32(mo+16)/65536;
+    if(a===1&&e===1&&!b&&!c)rot=0;else if(a===0&&e===0&&b===1&&c===-1)rot=90;else if(a===-1&&e===-1&&!b&&!c)rot=180;else if(a===0&&e===0&&b===-1&&c===1)rot=270;else throw new Error('flipped or odd rotation');if(rot&&!('rotation' in VideoFrame.prototype))throw new Error('this browser cannot turn video frames')}}
   const mdia=kid(d,trak,'mdia'),mdhd=kid(d,mdia,'mdhd'),ts=mdhd? (d.getUint8(mdhd.s)===1?u32(d,mdhd.s+20):u32(d,mdhd.s+12)):0;if(!ts)throw new Error('no timescale');
   let shift=0;const edts=kid(d,trak,'edts'),elst=edts&&kid(d,edts,'elst');
   if(elst){const v=d.getUint8(elst.s),n=u32(d,elst.s+4);let o=elst.s+8;for(let i=0;i<n;i++){const mt=v===1?d.getInt32(o+8)*4294967296+u32(d,o+12):d.getInt32(o+4);o+=v===1?20:12;if(mt>=0){shift=mt;break}}}
@@ -2882,7 +2888,7 @@ async function readMp4(file){
   // frame rate from the most common step between frames
   const steps=new Map();for(let i=1;i<N;i++){const dl=dts[i]-dts[i-1];steps.set(dl,(steps.get(dl)||0)+1)}
   let best=0,bc=0;for(const[k,v]of steps)if(v>bc){bc=v;best=k}
-  return{cfg,samples,fps:best?ts/best:30}}
+  return{cfg,samples,rot,fps:best?ts/best:30}}
 async function* sampleBytes(file,list){let i=0;
   while(i<list.length){let j=i,a=list[i].off,b=a+list[i].size;while(j+1<list.length&&list[j+1].off===b&&b-a<4e6){j++;b+=list[j].size}
     const buf=new Uint8Array(await file.slice(a,b).arrayBuffer());for(let k=i;k<=j;k++)yield buf.subarray(list[k].off-a,list[k].off-a+list[k].size);i=j+1}}
@@ -2993,7 +2999,8 @@ $('#saveAll').onclick=async()=>{for(const r of results.filter(r=>!r.saved)){cons
 function renderOuts(outs,c,src,rel,cd,ts,frame){
   const maxW=Math.max(...outs.map(o=>o.w)),maxH=Math.max(...outs.map(o=>o.h));
   if(glExp.width!==maxW||glExp.height!==maxH){glExp.width=maxW;glExp.height=maxH}
-  let a=performance.now();RE.upload(frame||vid);const fade=fadeAt(c.s,rel,cd);TM.upload+=performance.now()-a;TM.n++;
+  let a=performance.now();const fr=frame&&src.dm&&src.dm.rot?new VideoFrame(frame,{rotation:src.dm.rot}):frame; // Chrome turns the frame itself, which keeps HDR colors correct
+  RE.upload(fr||vid);if(fr&&fr!==frame)fr.close();const fade=fadeAt(c.s,rel,cd);TM.upload+=performance.now()-a;TM.n++;
   for(const o of outs){
     a=performance.now();RE.draw({vp:[0,maxH-o.h,o.w,o.h],crop:cropFor(src,c.s,o.asp,rel,cd),s:c.s,fade,time:rel});
     o.ctx.drawImage(glExp,0,0,o.w,o.h,0,0,o.w,o.h);TM.draw+=performance.now()-a;a=performance.now();overlays(o.ctx,o.w,o.h,o.asp,c.s,rel,true);TM.overlay+=performance.now()-a;a=performance.now();
