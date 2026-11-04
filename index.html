@@ -2809,7 +2809,7 @@ function makeAudioSink(aenc,sr){
 function expSummary(){const n=clips.filter(c=>c.on).length;const t=clips.filter(c=>c.on).reduce((a,c)=>a+c.out-c.in,0);const k=P.exp.aspects.length;const files=P.exp.mode==='join'?k:n*k;
   $('#expSum').textContent=n?`${n} clip${n>1?'s':''}, ${dur(t)} total, ${k} size${k>1?'s':''}: ${files} file${files>1?'s':''}. Takes about ${P.exp.speed==='accurate'?dur(t*2.5+n*2)+' or more':dur(t+n*1.5)}.`:'Tick at least one clip in the Clips list.';
   $('#expBtn').disabled=!n||!k||exporting}
-function buildExpAsp(){const box=$('#expAsp');
+function buildExpAsp(){const box=$('#expAsp');box.textContent='';
   for(const a of ASPK){const[w,h]=ASP[a];const l=document.createElement('label');l.className='check';const i=document.createElement('input');i.type='checkbox';i.id='ea_'+a.replace(':','x');i.checked=P.exp.aspects.includes(a);
     i.onchange=()=>{P.exp.aspects=ASPK.filter(k=>$('#ea_'+k.replace(':','x')).checked);save();expSummary()};
     const sp=document.createElement('span');sp.textContent=`${a}  ${w} x ${h}`;const sm=document.createElement('small');
@@ -2831,11 +2831,14 @@ async function runExport(){
   finally{document.removeEventListener('visibilitychange',onHide);recNode.port.postMessage(false);recSink=null;exporting=false;$('#brand').classList.remove('rec');
     A.mon.gain.value=1;A.fade.gain.cancelScheduledValues(0);A.fade.gain.value=1;applyAudio(tgt());expSummary();renderSources();dirty=true;$('#saveAll').hidden=results.filter(r=>!r.saved).length<2}
 }
+const TM={seek:0,upload:0,draw:0,overlay:0,encode:0,n:0};
 async function seekFrame(t){
-  vid.currentTime=t;await once(vid,'seeked');
+  const t0=performance.now();vid.currentTime=t;await once(vid,'seeked');
   await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r()}};vid.requestVideoFrameCallback(f);setTimeout(f,60)});
+  TM.seek+=performance.now()-t0;
 }
 async function exportJob(job,box){
+  const T0=performance.now();Object.assign(TM,{seek:0,upload:0,draw:0,overlay:0,encode:0,n:0});
   const total=job.clips.reduce((a,c)=>a+c.out-c.in,0);const br=+P.exp.q*1e6;const accurate=P.exp.speed==='accurate';
   const sr=AC.sampleRate;const ap=await pickAudio(sr);
   const outs=[];
@@ -2897,7 +2900,7 @@ async function exportJob(job,box){
         if(k%3===0)prog(.3+.7*(done+rel)/total,'Rendering frames')}
       seq+=cd*1e6;done+=cd}
     dropped=0}
-  recSink=null;
+  recSink=null;const T1=performance.now();
   for(const o of outs){o.st.textContent='Finishing';await o.enc.flush();o.enc.close()}
   if(aenc){await aenc.flush();aenc.close()}
   for(const o of outs){if(o.err)throw o.err;o.mux.finalize();const blob=new Blob([o.target.buffer],{type:'video/mp4'});
@@ -2906,6 +2909,7 @@ async function exportJob(job,box){
     o.st.textContent=`${mb} MB, ${dur(total)}${o.warn?'. Fallback codec used: may not open in QuickTime':''}`;
     if(dropped>Math.max(2,frames*.005)){o.st.textContent+=`. ${dropped} frames skipped: export again with Frame-accurate on.`;o.st.style.color='var(--warn)'}
     o.btn.textContent='Save';o.btn.disabled=false;o.btn.onclick=()=>saveResult(r,o.btn)}
+  window.__timing={mode:P.exp.speed,sizes:P.exp.aspects.length,clipSec:+total.toFixed(1),frames,dropped,totalSec:+((performance.now()-T0)/1000).toFixed(1),beforeFlushSec:+((T1-T0)/1000).toFixed(1),seekSec:+(TM.seek/1000).toFixed(1),uploadSec:+(TM.upload/1000).toFixed(1),drawSec:+(TM.draw/1000).toFixed(1),overlaySec:+(TM.overlay/1000).toFixed(1),encodeCallSec:+(TM.encode/1000).toFixed(1)};console.log('FCTIMING '+JSON.stringify(window.__timing));
   if(dropped>Math.max(2,frames*.005))toast(`${dropped} frames were skipped. Turn on Frame-accurate in Export settings and export again.`,7000);
 }
 let DL=null,dlTried=false;
@@ -2922,12 +2926,12 @@ $('#saveAll').onclick=async()=>{for(const r of results.filter(r=>!r.saved)){cons
 function renderOuts(outs,c,src,rel,cd,ts){
   const maxW=Math.max(...outs.map(o=>o.w)),maxH=Math.max(...outs.map(o=>o.h));
   if(glExp.width!==maxW||glExp.height!==maxH){glExp.width=maxW;glExp.height=maxH}
-  RE.upload(vid);const fade=fadeAt(c.s,rel,cd);
+  let a=performance.now();RE.upload(vid);const fade=fadeAt(c.s,rel,cd);TM.upload+=performance.now()-a;TM.n++;
   for(const o of outs){
-    RE.draw({vp:[0,maxH-o.h,o.w,o.h],crop:cropFor(src,c.s,o.asp,rel,cd),s:c.s,fade,time:rel});
-    o.ctx.drawImage(glExp,0,0,o.w,o.h,0,0,o.w,o.h);overlays(o.ctx,o.w,o.h,o.asp,c.s,rel,true);
-    const vf=new VideoFrame(o.c2,{timestamp:ts});const key=ts-o.lastKey>=2e6;if(key)o.lastKey=ts;
-    o.enc.encode(vf,{keyFrame:key});vf.close()}
+    a=performance.now();RE.draw({vp:[0,maxH-o.h,o.w,o.h],crop:cropFor(src,c.s,o.asp,rel,cd),s:c.s,fade,time:rel});
+    o.ctx.drawImage(glExp,0,0,o.w,o.h,0,0,o.w,o.h);TM.draw+=performance.now()-a;a=performance.now();overlays(o.ctx,o.w,o.h,o.asp,c.s,rel,true);TM.overlay+=performance.now()-a;a=performance.now();
+    const vf=new VideoFrame(o.c2,{timestamp:ts,duration:Math.round(1e6/fpsOf(src))});const key=ts-o.lastKey>=2e6;if(key)o.lastKey=ts;
+    o.enc.encode(vf,{keyFrame:key});vf.close();TM.encode+=performance.now()-a}
 }
 async function saveStill(){
   const src=curSrc(),s=tgt();if(!src||vid.readyState<2){toast('Load footage first');return}
