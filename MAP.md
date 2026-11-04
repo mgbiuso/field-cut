@@ -1,0 +1,25 @@
+# Field Cut: code map
+
+Built from `original/index.html` (3,018 lines, 1 MB). Line numbers are for the working copy `index.html` before any edits.
+
+| Lines | What lives there |
+|---|---|
+| 1-361 | Page head, styles, HTML for the whole screen |
+| 362-2266 | Script: the bundled mp4-muxer library (writes MP4 files) |
+| 2267 | One giant line: the Look color presets (LUT data, about 860 KB). Do not open in an editor that struggles with long lines. |
+| 2288 | `store`: saves to the browser's localStorage |
+| 2291-2300 | Small helpers (toast, timecode, durations) |
+| 2384-2470 | Reframe crop, fades, overlays (lower third, watermark), live preview drawing, safe zones |
+| 2471-2515 | Histogram, audio setup and meter |
+| 2515-2610 | Loading files, thumbnails, source and clip lists |
+| 2610-2680 | Sliders, Looks, Quick fix, `autoColor` |
+| 2679-2735 | Playback, In and Out marks, `addClip`, scrub strip, main draw loop |
+| 2750-2820 | Export setup: pick video and audio codec, real-time recorder |
+| 2820-2918 | `exportJob`: the export itself, then `saveResult` (download) |
+| 2918-2950 | Still frame, `save()` and restore of project settings |
+
+## Findings that matter for "permanent"
+1. **Google Fonts** (lines 4-6): the only real outside dependency. Fix in Phase 1.
+2. **`window.claude` downloads** (2898-2907): used only if present. Outside Claude, the code already falls back to a normal browser download link, so standalone use works. Keep the fallback, drop the Claude-only branch later.
+3. **Project saving today** (2936-2950): stored in the browser's localStorage under `fc_proj`. It saves event name, watermark, export settings, and clips by file key. If Mike clears browser data, it is gone. Phase 2 adds a real project file.
+4. Two comment links (stackoverflow, multimedia.cx) are harmless.
