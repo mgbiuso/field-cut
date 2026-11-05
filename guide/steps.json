@@ -1,0 +1,312 @@
+{
+  "id": "field-cut-guide-v2",
+  "eyebrow": "Field Cut",
+  "title": "Field Cut Step by Step",
+  "lede": "One small step at a time. Do the step. Tap the green button. Move on. Your place is saved if you stop.",
+  "flow": [
+    "Open",
+    "Load",
+    "Mark",
+    "Save",
+    "Fix",
+    "Size",
+    "Export"
+  ],
+  "fonts": [
+    {
+      "family": "GuideSans",
+      "weight": 400,
+      "path": "../fonts/IBMPlexSans-Regular.woff2"
+    },
+    {
+      "family": "GuideSans",
+      "weight": 600,
+      "path": "../fonts/IBMPlexSans-SemiBold.woff2"
+    },
+    {
+      "family": "GuideCond",
+      "weight": 600,
+      "path": "../fonts/IBMPlexSansCondensed-SemiBold.woff2"
+    }
+  ],
+  "keys": [
+    {
+      "key": "Space",
+      "does": "Play or stop"
+    },
+    {
+      "key": "I",
+      "does": "Start here"
+    },
+    {
+      "key": "O",
+      "does": "End here"
+    },
+    {
+      "key": "Enter",
+      "does": "Save the clip"
+    },
+    {
+      "key": "A",
+      "does": "Fix the color"
+    },
+    {
+      "key": "Cmd + S",
+      "does": "Save your work"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Open Field Cut",
+      "minutes": 1,
+      "where": "Finder, then the field-cut folder.",
+      "do": [
+        "Open **Finder**. Press [[Cmd + Shift + G]].",
+        "Paste **~/ClaudeCodeTest/field-cut** and press Return.",
+        "Double-click **index.html**."
+      ],
+      "see": "Field Cut opens in your browser with a dark screen and a **Load footage** button.",
+      "tip": "Use Chrome. If it opens somewhere else, right-click index.html, pick **Open With**, then **Google Chrome**. Bookmark the page so it is one click next time."
+    },
+    {
+      "title": "Load your videos",
+      "minutes": 1,
+      "where": "Top right of the page.",
+      "do": [
+        "Click the orange **Load footage** button.",
+        "Pick your videos. Or drag them onto the page."
+      ],
+      "see": "Your videos line up on the left under **Footage**.",
+      "image": "images/02-load.jpg",
+      "caption": "Click Load footage (circled).",
+      "alt": "Field Cut with the Load footage button circled"
+    },
+    {
+      "title": "Find the good part",
+      "minutes": 1,
+      "where": "The picture strip under the big screen.",
+      "do": [
+        "Click a video on the left to watch it.",
+        "Drag along the strip to move through it. Or press [[Space]] to play and stop."
+      ],
+      "see": "The big screen shows the moment you stop on.",
+      "image": "images/03-find.jpg",
+      "caption": "Drag along the strip (circled).",
+      "alt": "Picture strip under the viewer circled"
+    },
+    {
+      "title": "Mark the start and the end",
+      "minutes": 1,
+      "where": "The green In and red Out buttons, or your keys.",
+      "do": [
+        "Press [[I]] where the good part starts.",
+        "Press [[O]] where it ends."
+      ],
+      "see": "**IN** and **OUT** times appear at the bottom. A green line and a gold bar show on the strip.",
+      "image": "images/04-mark.jpg",
+      "caption": "In and Out marks (circled).",
+      "alt": "In and Out times circled"
+    },
+    {
+      "title": "Save it as a clip",
+      "minutes": 1,
+      "where": "Left side, under Clips.",
+      "do": [
+        "Press [[Enter]]."
+      ],
+      "see": "A new clip appears under **Clips** and a message says it saved.",
+      "tip": "Repeat steps 3, 4 and 5 for every good moment before you fix anything.",
+      "image": "images/05-clip.jpg",
+      "caption": "Your clip shows up here (circled).",
+      "alt": "Clips list with a new clip circled"
+    },
+    {
+      "title": "Save your work",
+      "minutes": 1,
+      "new": true,
+      "where": "Top right, **Save project**.",
+      "do": [
+        "Press [[Cmd + S]]. Or click **Save project**.",
+        "Pick a place for the file. Click Save."
+      ],
+      "see": "A message says **Project saved**. You now have a file ending in **.fieldcut.json**.",
+      "tip": "Save again after big changes. The file holds your clips and fixes. It does not hold your videos, so keep those safe too.",
+      "image": "images/06-save-project.jpg",
+      "caption": "Save project (circled).",
+      "alt": "Save project button circled"
+    },
+    {
+      "title": "Pick a clip to fix",
+      "minutes": 1,
+      "where": "Left side, under Clips.",
+      "do": [
+        "Click a clip."
+      ],
+      "see": "The clip gets an orange box. The top right says **Editing clip** and its name.",
+      "image": "images/07-pick.jpg",
+      "caption": "The picked clip (circled).",
+      "alt": "Selected clip with orange box circled"
+    },
+    {
+      "title": "Make the colors right",
+      "minutes": 2,
+      "where": "Right side, **Color** tab, then **Quick fix** and **Look**.",
+      "do": [
+        "Press [[A]] or click **Auto**. That is enough for most shots.",
+        "Same lighting all night? Scroll down and click **Apply to all clips**."
+      ],
+      "see": "The picture gets brighter and cleaner right away.",
+      "tip": "**Natural** is the safe pick for news. The **A** looks are your portfolio styles.",
+      "image": "images/08-color.jpg",
+      "caption": "Auto (circled).",
+      "alt": "Auto button circled in the Color tab"
+    },
+    {
+      "title": "Check your fix",
+      "minutes": 1,
+      "where": "Bar under the big screen.",
+      "do": [
+        "Click **Before / after**.",
+        "Click it again to turn it off."
+      ],
+      "see": "The left half is the old picture. The right half is your fix.",
+      "image": "images/09-before-after.jpg",
+      "caption": "Before / after (circled).",
+      "alt": "Before after button circled"
+    },
+    {
+      "title": "Pick where it is going",
+      "minutes": 2,
+      "where": "Bar under the big screen, the size buttons.",
+      "do": [
+        "Click the size for the app: **16:9**, **9:16**, **4:5** or **1:1**.",
+        "Drag the picture so the person stays in the box.",
+        "Click **Safe zones**. Keep faces inside the bright box, away from the edges. Apps cover the edges."
+      ],
+      "see": "The bright box changes shape. Safe zones add guide lines on the picture.",
+      "tip": "Keys [[1]] [[2]] [[3]] [[4]] switch sizes.",
+      "image": "images/10-size.jpg",
+      "caption": "The size buttons (circled).",
+      "alt": "Size buttons circled"
+    },
+    {
+      "title": "Make voices clear",
+      "minutes": 1,
+      "where": "Right side, **Audio** tab. The meter is under the big screen.",
+      "do": [
+        "Leave **Voice clarity** on.",
+        "Play the clip. Talking should reach about -12 to -6 on the meter.",
+        "Too quiet? Raise **Level**."
+      ],
+      "see": "The meter bounces while someone talks.",
+      "image": "images/11-audio.jpg",
+      "caption": "Voice clarity (circled).",
+      "alt": "Voice clarity switch circled"
+    },
+    {
+      "title": "Add your name (only if you want)",
+      "minutes": 1,
+      "where": "Right side, **Text** tab, then **Watermark all exports**.",
+      "do": [
+        "Tick **Add a credit** to put your name in the corner.",
+        "Skip this step to add nothing."
+      ],
+      "see": "Your credit shows in the corner of the picture.",
+      "image": "images/12-credit.jpg",
+      "caption": "Add a credit (circled).",
+      "alt": "Add a credit checkbox circled"
+    },
+    {
+      "title": "Make the videos",
+      "minutes": 1,
+      "where": "Right side, **Export** tab.",
+      "do": [
+        "Tick the sizes you want. One to three is plenty.",
+        "Tick the clips you want on the left (the little boxes).",
+        "Click **Export ticked clips**."
+      ],
+      "see": "Progress bars fill. The last part says **Finishing**. A video takes about as long as it plays.",
+      "tip": "Keep this tab open and in front until it finishes. A 5 minute video takes about 5 and a half minutes. If you see red text about memory, tick fewer sizes.",
+      "image": "images/13-export.jpg",
+      "caption": "Export ticked clips (circled).",
+      "alt": "Export button circled"
+    },
+    {
+      "title": "Save the videos to your Mac",
+      "minutes": 1,
+      "where": "Right side, Export tab, **Finished files**.",
+      "do": [
+        "Click **Save** next to each file. Or click **Save all**.",
+        "If Chrome asks about downloading several files, click **Allow**."
+      ],
+      "see": "The button says **Saved**. The files are in your **Downloads** folder.",
+      "image": "images/14-finished.jpg",
+      "caption": "Finished files (circled).",
+      "alt": "Finished files list circled"
+    },
+    {
+      "title": "Come back to it later",
+      "minutes": 2,
+      "new": true,
+      "where": "Top right, **Open project**.",
+      "do": [
+        "Open Field Cut again (step 1).",
+        "Click **Open project** and pick your **.fieldcut.json** file.",
+        "Drag the same videos onto the page."
+      ],
+      "see": "A note says the project is waiting for your videos. Once they load, your clips come back with their fixes.",
+      "image": "images/15-open-project.jpg",
+      "caption": "Open project (circled).",
+      "alt": "Open project button circled"
+    },
+    {
+      "title": "Forgot a key?",
+      "minutes": 1,
+      "where": "Top right, **Shortcuts**.",
+      "do": [
+        "Click **Shortcuts**."
+      ],
+      "see": "Every key is listed.",
+      "image": "images/16-shortcuts.jpg",
+      "caption": "Shortcuts (circled).",
+      "alt": "Shortcuts button circled"
+    }
+  ],
+  "stuck": [
+    {
+      "problem": "Pressing keys does nothing.",
+      "fix": "Click the empty dark area of the page first. A typing box may have grabbed your keys."
+    },
+    {
+      "problem": "It says it cannot read my video.",
+      "fix": "Phone video from Photos: export it again as **Most Compatible**, then load that."
+    },
+    {
+      "problem": "It says fast export is not possible for this file.",
+      "fix": "Nothing is wrong. It switches to a slower mode and still finishes. Keep the tab open."
+    },
+    {
+      "problem": "The export stopped with an error.",
+      "fix": "Tick fewer sizes, pick **Standard** quality, close other tabs and apps, and try again."
+    },
+    {
+      "problem": "Red text about memory.",
+      "fix": "Tick fewer sizes or export fewer clips at a time."
+    },
+    {
+      "problem": "The page went blank or I closed it.",
+      "fix": "Open Field Cut again (step 1). Use **Open project** and drop your videos in (step 15)."
+    },
+    {
+      "problem": "I do not hear sound while exporting.",
+      "fix": "That is normal. The file still has sound. Tick **Play sound while exporting** if you want to hear it."
+    },
+    {
+      "problem": "I do not know what to do next.",
+      "fix": "Click **Where was I?** at the top. It jumps to your next step."
+    }
+  ],
+  "finish_title": "You made it.",
+  "finish_text": "Your videos are in Downloads. Take a break.",
+  "footer": "Field Cut guide, version 2, November 2026."
+}

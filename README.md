@@ -43,8 +43,16 @@ If Field Cut cannot read a file this way (an unusual codec, or a fragmented MP4)
 
 The console (Chrome menu, View, Developer, JavaScript Console) prints a line starting FCTIMING after each export with where the time went.
 
+## The step-by-step guide
+Open `guide/field-cut-guide.html` (also copied to Downloads as "Field Cut Step by Step guide.html"). It has 16 steps with pictures, tick boxes that remember your place, and a "Stuck?" box. To change it, edit `guide/steps.json` and rebuild:
+
+    python3 ~/ClaudeCodeTest/guide-template/build_guide.py guide/steps.json guide/field-cut-guide.html
+
+## Test results so far (Nov. 4, 2026, 2019 Intel MacBook, 8 GB, Chrome)
+- 5 minute video, 2 sizes: 5 minutes 25 seconds. 3 sizes: 6 minutes 56 seconds (memory got tight). All frames kept.
+- The page only loads its own files (fonts and your video). No internet is used. A true Wi-Fi-off run is still worth doing once yourself.
+- Big exports show a red memory warning before you start.
+
 ## Still to test
-- Wi-Fi-off run: open the page with Wi-Fi off and repeat load, mark, grade, export.
-- Save one exported file and watch it: check picture and sound are in sync.
-- A clip of 5 minutes, to confirm timing and memory at your longest expected length.
-- Safari (optional).
+- Wi-Fi-off run yourself: turn Wi-Fi off, open the page, then load, mark, grade and export.
+- Safari (optional). Fast export needs a newer Safari. If it cannot run, it falls back to the slower backup mode.
