@@ -219,6 +219,8 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
         <span class="sp"></span>
         <button class="btn sm" id="cmpBtn" type="button" title="Left half shows the original">Before / after</button>
         <button class="btn sm" id="zebBtn" type="button" title="Stripes on blown-out highlights">Zebras</button>
+        <select class="btn sm" id="gridSel" title="Composition grid. Only a guide, never in the exported video."></select>
+        <button class="btn sm" id="cropBtn" type="button" title="Draw a crop box on the picture">Crop</button>
         <button class="btn sm" id="safeBtn" type="button" title="App buttons and captions cover these areas">Safe zones</button>
       </div>
       <div class="bar">
@@ -288,6 +290,19 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
           <p class="hint">Each frame size keeps its own position. In Full + guide view, drag the picture to move the crop and scroll to zoom.</p>
           <div id="sl-frame"></div>
           <div class="btnrow"><button class="btn sm" id="ctrBtn" type="button">Center</button><button class="btn sm" id="frAll" type="button">Use this framing for all sizes</button></div>
+        </section>
+        <section class="sect">
+          <h2>Crop</h2>
+          <p class="hint">Click <b>Crop</b> above the picture, then drag the box or its handles. Everything else is trimmed away before the frame size is applied.</p>
+          <div class="btnrow"><button class="btn sm" id="cropBtn2" type="button">Crop box</button><button class="btn sm" id="cropReset" type="button">Reset crop</button></div>
+          <div class="hint" id="cropInfo"></div>
+        </section>
+        <section class="sect">
+          <h2>Rotate and flip</h2>
+          <p class="hint">For sideways or upside-down clips, or to mirror a shot.</p>
+          <div class="btnrow"><button class="btn sm" id="rotL" type="button">Rotate left</button><button class="btn sm" id="rotR" type="button">Rotate right</button></div>
+          <div class="btnrow"><button class="btn sm" id="flipH" type="button">Flip left/right</button><button class="btn sm" id="flipV" type="button">Flip up/down</button><button class="btn sm" id="tfReset" type="button">Reset</button></div>
+          <div class="hint" id="tfInfo"></div>
         </section>
         <section class="sect">
           <h2>Timing</h2>
@@ -2327,12 +2342,13 @@ const LOOKS=[['none','Natural'],['A1','Golden green'],['A2','Golden teal'],['A3'
 const uid=()=>Math.random().toString(36).slice(2,9);
 const defS=()=>({g:{exp:0,con:0,hi:0,sh:0,wh:0,bl:0,temp:0,tint:0,sat:0,vib:0},look:'none',lookAmt:100,
   fx:{sharp:15,vig:0,grain:0,push:0},frame:Object.fromEntries(ASPK.map(a=>[a,{x:.5,y:.5,z:1}])),
-  fade:{in:0,out:0},au:{voice:true,gain:0,mute:false},lt:{on:false,l1:'',l2:'',dur:5}});
+  fade:{in:0,out:0},au:{voice:true,gain:0,mute:false},lt:{on:false,l1:'',l2:'',dur:5},
+  crop:{l:0,t:0,r:0,b:0},tf:{rot:0,fx:false,fy:false}});
 const clone=o=>JSON.parse(JSON.stringify(o));
 
 /* ---------- state ---------- */
 let sources=[], clips=[], cur={src:null,clip:null}, marks={in:null,out:null};
-let view={aspect:'16:9',mode:'guide',compare:false,zebra:false,safe:false,tab:'color'};
+let view={aspect:'16:9',mode:'guide',compare:false,zebra:false,safe:false,tab:'color',cropEdit:false,grid:(()=>{try{return JSON.parse(localStorage.getItem('fc_grid'))||'thirds'}catch(e){return 'thirds'}})()};
 let P={event:'Election Night',wm:{on:false,text:'Video: Mike Biuso',pos:'br',size:3,op:85},exp:{aspects:['16:9'],q:'16',mode:'each',listen:false,xf:false,xfd:.5}};
 let gradeClip=null, exporting=false, playingClip=null, dirty=true, results=[];
 const vid=$('#vid'), tv=$('#tv');
@@ -2352,8 +2368,11 @@ function once(el,ev){return new Promise(r=>el.addEventListener(ev,r,{once:true})
 
 /* ---------- WebGL renderer ---------- */
 const VS=`#version 300 es
-in vec2 p;uniform vec4 uCrop;out vec2 vUv;out vec2 vPos;
-void main(){vPos=p;vUv=vec2(uCrop.x+(p.x*.5+.5)*uCrop.z,uCrop.y+(1.-(p.y*.5+.5))*uCrop.w);gl_Position=vec4(p,0.,1.);}`;
+in vec2 p;uniform vec4 uCrop;uniform vec3 uTf;out vec2 vUv;out vec2 vPos;
+void main(){vPos=p;vec2 d=vec2(uCrop.x+(p.x*.5+.5)*uCrop.z,uCrop.y+(1.-(p.y*.5+.5))*uCrop.w);
+  if(uTf.y>.5)d.x=1.-d.x;if(uTf.z>.5)d.y=1.-d.y;
+  if(uTf.x>.5&&uTf.x<1.5)vUv=vec2(d.y,1.-d.x);else if(uTf.x>1.5&&uTf.x<2.5)vUv=vec2(1.-d.x,1.-d.y);else if(uTf.x>2.5)vUv=vec2(1.-d.y,d.x);else vUv=d;
+  gl_Position=vec4(p,0.,1.);}`;
 const FS=`#version 300 es
 precision highp float;precision highp sampler3D;
 in vec2 vUv;in vec2 vPos;out vec4 o;
@@ -2402,7 +2421,7 @@ class Renderer{
     gl.useProgram(pr);
     const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
     const loc=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-    this.u={};for(const n of ['uCrop','uTex','uLut','uExp','uCon','uHi','uSh','uWh','uBl','uTemp','uTint','uSat','uVib','uLutAmt','uSharp','uVig','uGrain','uFade','uTime','uSplit','uZebra','uTexel','uVpX'])this.u[n]=gl.getUniformLocation(pr,n);
+    this.u={};for(const n of ['uCrop','uTf','uTex','uLut','uExp','uCon','uHi','uSh','uWh','uBl','uTemp','uTint','uSat','uVib','uLutAmt','uSharp','uVig','uGrain','uFade','uTime','uSplit','uZebra','uTexel','uVpX'])this.u[n]=gl.getUniformLocation(pr,n);
     this.tex=gl.createTexture();gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,this.tex);
     for(const[k,v]of[[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,v);
     gl.uniform1i(this.u.uTex,0);gl.uniform1i(this.u.uLut,1);
@@ -2417,7 +2436,7 @@ class Renderer{
   draw(o){
     const gl=this.gl,u=this.u,s=o.s,g=s.g;gl.useProgram(this.pr);
     gl.viewport(o.vp[0],o.vp[1],o.vp[2],o.vp[3]);
-    gl.uniform4f(u.uCrop,...o.crop);
+    gl.uniform4f(u.uCrop,...o.crop);const tf=s.tf||{rot:0,fx:false,fy:false};gl.uniform3f(u.uTf,tf.rot|0,tf.fx?1:0,tf.fy?1:0);
     gl.uniform1f(u.uExp,g.exp);gl.uniform1f(u.uCon,g.con/200);gl.uniform1f(u.uHi,g.hi/100);gl.uniform1f(u.uSh,g.sh/100);
     gl.uniform1f(u.uWh,1-g.wh/100*.2);gl.uniform1f(u.uBl,g.bl/100*.08);gl.uniform1f(u.uTemp,g.temp/100);gl.uniform1f(u.uTint,g.tint/100);
     gl.uniform1f(u.uSat,g.sat/100);gl.uniform1f(u.uVib,g.vib/100);
@@ -2432,10 +2451,13 @@ class Renderer{
 }
 
 /* crop rectangle (normalized source coords) for a frame size */
+/* "display" space = the picture after rotate and flip. Crop box and framing both live there. */
+function dispDims(src,s){return s&&s.tf&&s.tf.rot%2===1?[src.h,src.w]:[src.w,src.h]}
 function cropFor(src,s,asp,rel,cd){
-  const[ow,oh]=ASP[asp];const ta=ow/oh,sa=src.w/src.h;let cw=1,ch=1;if(ta<sa)cw=ta/sa;else ch=sa/ta;
+  const R=s.crop||{l:0,t:0,r:0,b:0},rw=Math.max(.02,1-R.l-R.r),rh=Math.max(.02,1-R.t-R.b);const[dw,dh]=dispDims(src,s);
+  const[ow,oh]=ASP[asp];const ta=ow/oh,sa=(dw*rw)/(dh*rh);let cw=1,ch=1;if(ta<sa)cw=ta/sa;else ch=sa/ta;
   const f=s.frame[asp];const pk=(rel!=null&&cd>0)?clamp(rel/cd,0,1):0;const z=f.z*(1+s.fx.push/100*.08*pk);
-  cw/=z;ch/=z;return[clamp(f.x-cw/2,0,1-cw),clamp(f.y-ch/2,0,1-ch),cw,ch];
+  cw/=z;ch/=z;const x=clamp(f.x-cw/2,0,1-cw),y=clamp(f.y-ch/2,0,1-ch);return[R.l+x*rw,R.t+y*rh,cw*rw,ch*rh];
 }
 function fadeAt(s,rel,cd){if(rel==null)return 1;let f=1;if(s.fade.in>0)f=Math.min(f,rel/s.fade.in);if(s.fade.out>0)f=Math.min(f,(cd-rel)/s.fade.out);return clamp(f,0,1)}
 
@@ -2475,13 +2497,13 @@ const glPrev=document.createElement('canvas');let RP=null;
 try{RP=new Renderer(glPrev)}catch(e){console.error(e)}
 const glExp=document.createElement('canvas');let RE=null;
 function clipCtx(){const c=curClip();if(!c||c.src!==cur.src)return null;const t=vid.currentTime;if(t<c.in-.001||t>c.out+.001)return null;return{rel:t-c.in,cd:c.out-c.in,c}}
-let cropRectPx=null;
+let cropRectPx=null,cropBoxPx=null;
 function drawPreview(){
   const src=curSrc();if(!src||!RP||vid.readyState<2)return;
   const s=tgt();const st=$('#stage');const dpr=Math.min(devicePixelRatio||1,2);
   const aw=st.clientWidth-16,ah=st.clientHeight-16;const cc=clipCtx();const rel=cc?cc.rel:null,cd=cc?cc.cd:0;
   const fade=cc&&playingClip?fadeAt(s,rel,cd):1;
-  let ar;if(view.mode==='guide')ar=src.w/src.h;else{const[a,b]=ASP[view.aspect];ar=a/b}
+  const[DW,DH]=dispDims(src,s);const full=view.mode==='guide'||view.cropEdit;let ar;if(full)ar=DW/DH;else{const[a,b]=ASP[view.aspect];ar=a/b}
   let dw=aw,dh=aw/ar;if(dh>ah){dh=ah;dw=ah*ar}
   const W=Math.max(2,Math.round(dw*dpr)),H=Math.max(2,Math.round(dh*dpr));
   if(viewC.width!==W||viewC.height!==H){viewC.width=W;viewC.height=H}
@@ -2489,26 +2511,43 @@ function drawPreview(){
   if(glPrev.width!==W||glPrev.height!==H){glPrev.width=W;glPrev.height=H}
   RP.upload(vid);
   const crop=cropFor(src,s,view.aspect,rel,cd);
-  RP.draw({vp:[0,0,W,H],crop:view.mode==='guide'?[0,0,1,1]:crop,s,fade,split:view.compare?W/2:null,zebra:view.zebra,time:performance.now()/1000});
+  RP.draw({vp:[0,0,W,H],crop:full?[0,0,1,1]:crop,s,fade,split:view.compare?W/2:null,zebra:view.zebra,time:performance.now()/1000});
   vctx.drawImage(glPrev,0,0);
-  if(view.mode==='guide'){
+  cropBoxPx=null;
+  if(view.cropEdit){
+    const R=s.crop,x=R.l*W,y=R.t*H,w=(1-R.l-R.r)*W,h=(1-R.t-R.b)*H;cropBoxPx={x:x/dpr,y:y/dpr,w:w/dpr,h:h/dpr,W:dw,H:dh};
+    vctx.save();vctx.fillStyle='rgba(0,0,0,.62)';vctx.beginPath();vctx.rect(0,0,W,H);vctx.rect(x,y,w,h);vctx.fill('evenodd');
+    drawGrid(vctx,x,y,w,h,view.grid==='off'?'thirds':view.grid,dpr);
+    vctx.strokeStyle='#efe6cf';vctx.lineWidth=2*dpr;vctx.strokeRect(x,y,w,h);
+    vctx.fillStyle='#efe6cf';const hs=5*dpr;for(const[hx,hy]of[[x,y],[x+w/2,y],[x+w,y],[x,y+h/2],[x+w,y+h/2],[x,y+h],[x+w/2,y+h],[x+w,y+h]])vctx.fillRect(hx-hs,hy-hs,2*hs,2*hs);
+    vctx.restore();
+  }else if(view.mode==='guide'){
     const x=crop[0]*W,y=crop[1]*H,w=crop[2]*W,h=crop[3]*H;cropRectPx={x:x/dpr,y:y/dpr,w:w/dpr,h:h/dpr,W:dw,H:dh};
     vctx.save();vctx.fillStyle='rgba(0,0,0,.55)';vctx.beginPath();vctx.rect(0,0,W,H);vctx.rect(x,y,w,h);vctx.fill('evenodd');
     vctx.strokeStyle='#5aa874';vctx.lineWidth=2*dpr;vctx.strokeRect(x+dpr,y+dpr,w-2*dpr,h-2*dpr);
-    vctx.strokeStyle='rgba(255,255,255,.18)';vctx.lineWidth=dpr;vctx.beginPath();
-    for(let i=1;i<3;i++){vctx.moveTo(x+w*i/3,y);vctx.lineTo(x+w*i/3,y+h);vctx.moveTo(x,y+h*i/3);vctx.lineTo(x+w,y+h*i/3)}vctx.stroke();
+    drawGrid(vctx,x,y,w,h,view.grid,dpr);
     if(view.safe)safeZones(vctx,x,y,w,h);
     vctx.save();vctx.translate(x,y);vctx.scale(w/ASP[view.aspect][0],h/ASP[view.aspect][1]);overlays(vctx,ASP[view.aspect][0],ASP[view.aspect][1],view.aspect,s,rel,true);vctx.restore();
     vctx.restore();
   }else{
-    cropRectPx=null;
+    cropRectPx=null;drawGrid(vctx,0,0,W,H,view.grid,dpr);
     if(view.safe)safeZones(vctx,0,0,W,H);
     vctx.save();vctx.scale(W/ASP[view.aspect][0],H/ASP[view.aspect][1]);overlays(vctx,ASP[view.aspect][0],ASP[view.aspect][1],view.aspect,s,rel,true);vctx.restore();
   }
   if(view.compare){vctx.fillStyle='#5aa874';vctx.fillRect(W/2-dpr,0,2*dpr,H)}
   $('#badgeL').hidden=!view.compare;$('#badgeL').textContent='Before';
-  $('#badgeR').hidden=false;$('#badgeR').textContent=view.compare?'After':(view.mode==='guide'?`${src.w}x${src.h}`:view.aspect+' output');
+  $('#badgeR').hidden=false;$('#badgeR').textContent=view.compare?'After':(view.cropEdit?'Crop: '+Math.round(DW*(1-s.crop.l-s.crop.r))+'x'+Math.round(DH*(1-s.crop.t-s.crop.b)):view.mode==='guide'?`${DW}x${DH}`:view.aspect+' output');
 }
+/* composition grids. Preview only: they are never drawn into exported video. */
+const GRIDS=[['off','No grid'],['thirds','Rule of thirds'],['golden','Golden ratio'],['center','Center cross'],['thirds-center','Thirds + center'],['diag','Diagonals']];
+function drawGrid(ctx,x,y,w,h,type,dpr){
+  if(!type||type==='off')return;ctx.save();ctx.strokeStyle='rgba(255,255,255,.32)';ctx.lineWidth=dpr;ctx.beginPath();
+  const L=(a,b,c,d)=>{ctx.moveTo(a,b);ctx.lineTo(c,d)};
+  if(type==='thirds'||type==='thirds-center')for(let i=1;i<3;i++){L(x+w*i/3,y,x+w*i/3,y+h);L(x,y+h*i/3,x+w,y+h*i/3)}
+  if(type==='golden')for(const t of[.382,.618]){L(x+w*t,y,x+w*t,y+h);L(x,y+h*t,x+w,y+h*t)}
+  if(type==='center'||type==='thirds-center'){L(x+w/2,y,x+w/2,y+h);L(x,y+h/2,x+w,y+h/2)}
+  if(type==='diag'){L(x,y,x+w,y+h);L(x+w,y,x,y+h);L(x+w/2,y,x+w,y+h/2);L(x+w,y+h/2,x+w/2,y+h);L(x+w/2,y+h,x,y+h/2);L(x,y+h/2,x+w/2,y)}
+  ctx.stroke();ctx.restore()}
 function safeZones(ctx,x,y,w,h){
   const tall=h>w*1.2;ctx.save();ctx.fillStyle='rgba(229,103,90,.22)';
   if(tall){ctx.fillRect(x,y,w,h*.12);ctx.fillRect(x,y+h*.78,w,h*.22);ctx.fillRect(x+w*.86,y+h*.40,w*.14,h*.38)}
@@ -2685,7 +2724,10 @@ function syncInspector(){
   $('#ltOn').checked=S.lt.on;$('#lt1').value=S.lt.l1;$('#lt2').value=S.lt.l2;
   $('#wmOn').checked=P.wm.on;$('#wmText').value=P.wm.text;$('#wmPos').value=P.wm.pos;
   $('#frAsp').textContent=view.aspect;
-  ['#allG','#pasteG','#copyG','#ctrBtn','#frAll','#auVoice','#auMute','#ltOn','#lt1','#lt2','#lookAmt'].forEach(q=>$(q).disabled=!s);
+  {const C=S.crop,T=S.tf;$('#cropInfo').textContent=(C.l+C.t+C.r+C.b>.001)?'Cropped: '+Math.round(C.l*100)+'% left, '+Math.round(C.r*100)+'% right, '+Math.round(C.t*100)+'% top, '+Math.round(C.b*100)+'% bottom':'No crop';
+   $('#tfInfo').textContent=(T.rot||T.fx||T.fy)?'Rotated '+(T.rot*90)+' degrees'+(T.fx?', flipped left/right':'')+(T.fy?', flipped up/down':''):'Original orientation';
+   $('#cropBtn').classList.toggle('on',view.cropEdit);$('#cropBtn2').classList.toggle('on',view.cropEdit)}
+  ['#allG','#pasteG','#copyG','#ctrBtn','#cropBtn','#cropBtn2','#cropReset','#rotL','#rotR','#flipH','#flipV','#tfReset','#frAll','#auVoice','#auMute','#ltOn','#lt1','#lt2','#lookAmt'].forEach(q=>$(q).disabled=!s);
   $('#pasteG').disabled=!s||!gradeClip;
   $$('#fixes .chip,#looks .look').forEach(b=>b.disabled=!s);
   dirty=true;
@@ -2851,12 +2893,32 @@ scrubC.addEventListener('pointermove',e=>{
 scrubC.addEventListener('pointerup',()=>{scrubbing=false;if(edgeDrag){const c=edgeDrag.c;edgeDrag=null;c.thumb=null;renderClips();save();toast(c.name+' is now '+dur(c.out-c.in)+' long')}});
 
 /* drag to reframe */
-let dragging=null;
-viewC.addEventListener('pointerdown',e=>{if(view.mode!=='guide'||!cropRectPx||!tgt())return;const r=viewC.getBoundingClientRect();dragging={x:e.clientX,y:e.clientY,f:{...tgt().frame[view.aspect]},W:r.width,H:r.height};viewC.setPointerCapture(e.pointerId)});
-viewC.addEventListener('pointermove',e=>{if(!dragging)return;const s=tgt();const f=s.frame[view.aspect];f.x=clamp(dragging.f.x+(e.clientX-dragging.x)/dragging.W,0,1);f.y=clamp(dragging.f.y+(e.clientY-dragging.y)/dragging.H,0,1);
-  const src=curSrc();const cr=cropFor(src,s,view.aspect,null,0);f.x=cr[0]+cr[2]/2;f.y=cr[1]+cr[3]/2;syncInspector()});
-viewC.addEventListener('pointerup',()=>{if(dragging){dragging=null;saveSoon()}});
-viewC.addEventListener('wheel',e=>{if(view.mode!=='guide'||!tgt())return;e.preventDefault();const f=tgt().frame[view.aspect];f.z=clamp(f.z*(e.deltaY<0?1.04:1/1.04),1,3);syncInspector();saveSoon()},{passive:false});
+let dragging=null,cdrag=null;
+/* frame position f is stored relative to the cropped region; these convert drag pixels to it */
+function reclampFrame(s,f){const src=curSrc();if(!src)return;const R=s.crop,rw=1-R.l-R.r,rh=1-R.t-R.b;const cr=cropFor(src,s,view.aspect,null,0);f.x=(cr[0]+cr[2]/2-R.l)/rw;f.y=(cr[1]+cr[3]/2-R.t)/rh}
+function cropHit(e){const r=viewC.getBoundingClientRect(),b=cropBoxPx;if(!b)return null;const px=e.clientX-r.left,py=e.clientY-r.top,m=12;
+  const L=Math.abs(px-b.x)<m,Rr=Math.abs(px-(b.x+b.w))<m,T=Math.abs(py-b.y)<m,B=Math.abs(py-(b.y+b.h))<m;
+  const inX=px>b.x-m&&px<b.x+b.w+m,inY=py>b.y-m&&py<b.y+b.h+m;
+  if(L&&T)return'nw';if(Rr&&T)return'ne';if(L&&B)return'sw';if(Rr&&B)return'se';
+  if(L&&inY)return'w';if(Rr&&inY)return'e';if(T&&inX)return'n';if(B&&inX)return's';
+  if(px>b.x&&px<b.x+b.w&&py>b.y&&py<b.y+b.h)return'move';return null}
+const CUR={nw:'nwse-resize',se:'nwse-resize',ne:'nesw-resize',sw:'nesw-resize',n:'ns-resize',s:'ns-resize',e:'ew-resize',w:'ew-resize',move:'move'};
+viewC.addEventListener('pointerdown',e=>{
+  if(!tgt())return;const r=viewC.getBoundingClientRect();
+  if(view.cropEdit){const h=cropHit(e);if(!h)return;const R=tgt().crop;cdrag={h,x:e.clientX,y:e.clientY,R:{...R},W:r.width,H:r.height};viewC.setPointerCapture(e.pointerId);return}
+  if(view.mode!=='guide'||!cropRectPx)return;
+  const R=tgt().crop;dragging={x:e.clientX,y:e.clientY,f:{...tgt().frame[view.aspect]},W:r.width*(1-R.l-R.r),H:r.height*(1-R.t-R.b)};viewC.setPointerCapture(e.pointerId)});
+viewC.addEventListener('pointermove',e=>{
+  if(cdrag){const s=tgt(),o=cdrag.R,R=s.crop,dx=(e.clientX-cdrag.x)/cdrag.W,dy=(e.clientY-cdrag.y)/cdrag.H,h=cdrag.h,MIN=.1;
+    if(h==='move'){const w=1-o.l-o.r,hh=1-o.t-o.b;const l=clamp(o.l+dx,0,1-w),t=clamp(o.t+dy,0,1-hh);R.l=l;R.r=1-w-l;R.t=t;R.b=1-hh-t}
+    else{if(h.includes('w'))R.l=clamp(o.l+dx,0,1-o.r-MIN);if(h.includes('e'))R.r=clamp(o.r-dx,0,1-o.l-MIN);if(h.includes('n'))R.t=clamp(o.t+dy,0,1-o.b-MIN);if(h.includes('s'))R.b=clamp(o.b-dy,0,1-o.t-MIN)}
+    for(const a of ASPK)reclampFrame2(s,a);dirty=true;syncInspector();return}
+  if(view.cropEdit){const h=cropHit(e);viewC.style.cursor=h?CUR[h]:'default';return}
+  if(!dragging)return;const s=tgt();const f=s.frame[view.aspect];f.x=clamp(dragging.f.x+(e.clientX-dragging.x)/dragging.W,0,1);f.y=clamp(dragging.f.y+(e.clientY-dragging.y)/dragging.H,0,1);
+  reclampFrame(s,f);syncInspector()});
+function reclampFrame2(s,a){const src=curSrc();if(!src)return;const f=s.frame[a],R=s.crop,rw=1-R.l-R.r,rh=1-R.t-R.b;const cr=cropFor(src,s,a,null,0);f.x=(cr[0]+cr[2]/2-R.l)/rw;f.y=(cr[1]+cr[3]/2-R.t)/rh}
+viewC.addEventListener('pointerup',()=>{if(cdrag){cdrag=null;saveSoon()}if(dragging){dragging=null;saveSoon()}});
+viewC.addEventListener('wheel',e=>{if(view.mode!=='guide'||view.cropEdit||!tgt())return;e.preventDefault();const f=tgt().frame[view.aspect];f.z=clamp(f.z*(e.deltaY<0?1.04:1/1.04),1,3);syncInspector();saveSoon()},{passive:false});
 
 /* main loop */
 let lastHist=0,lastLook=0;
@@ -2868,7 +2930,7 @@ function loop(t){
       if(c&&A.fade)A.fade.gain.setTargetAtTime(fadeAt(c.s,clamp(vid.currentTime-c.in,0,c.out-c.in),c.out-c.in),AC.currentTime,.015)}
     if(seq&&vid.paused&&!seq.busy)stopJoined('Preview stopped');
     $('#joinBtn').textContent=seq?'Stop preview':'Play joined';
-    if(!vid.paused||dirty||view.mode==='guide'&&dragging){drawPreview();dirty=false}
+    if(!vid.paused||dirty||view.mode==='guide'&&dragging||cdrag){drawPreview();dirty=false}
     if(!vid.paused||scrubbing)drawScrub();
     $('#tc').textContent=tc(vid.currentTime,fpsOf(s));$('#playBtn').textContent=vid.paused?'Play':'Pause';
     if(t-lastHist>250){lastHist=t;drawHist()}
@@ -3252,7 +3314,7 @@ async function saveStill(){
   const src=curSrc(),s=tgt();if(!src||vid.readyState<2){toast('Load footage first');return}
   try{if(!RE)RE=new Renderer(glExp)}catch(e){return}
   const cc=clipCtx();const crop=cropFor(src,s,view.aspect,cc?cc.rel:null,cc?cc.cd:0);
-  let w=Math.round(crop[2]*src.w),h=Math.round(crop[3]*src.h);const k=Math.min(1,4096/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
+  const[sdw,sdh]=dispDims(src,s);let w=Math.round(crop[2]*sdw),h=Math.round(crop[3]*sdh);const k=Math.min(1,4096/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
   glExp.width=w;glExp.height=h;RE.upload(vid);RE.draw({vp:[0,0,w,h],crop,s:Object.assign(clone(s),{fx:{...s.fx,grain:0}}),fade:1});
   const c2=document.createElement('canvas');c2.width=w;c2.height=h;const x=c2.getContext('2d');x.drawImage(glExp,0,0);
   overlays(x,w,h,view.aspect,null,null,true);
@@ -3392,6 +3454,22 @@ $('#wmPos').onchange=e=>{P.wm.pos=e.target.value;dirty=true;save()};
 $('#copyG').onclick=()=>{const s=tgt();if(!s)return;gradeClip={g:clone(s.g),look:s.look,lookAmt:s.lookAmt,fx:clone(s.fx)};syncInspector();toast('Grade copied')};
 $('#pasteG').onclick=()=>{const s=tgt();if(!s||!gradeClip)return;Object.assign(s,clone(gradeClip));syncInspector();saveSoon();toast('Grade pasted')};
 $('#allG').onclick=()=>{const s=tgt();if(!s)return;const g={g:clone(s.g),look:s.look,lookAmt:s.lookAmt,fx:clone(s.fx)};for(const c of clips)Object.assign(c.s,clone(g));for(const x of sources)Object.assign(x.s,clone(g));save();toast(`Grade applied to ${clips.length} clips`)};
+/* grid, crop, rotate, flip */
+(function(){const g=$('#gridSel');g.innerHTML=GRIDS.map(([k,n])=>`<option value="${k}">${n}</option>`).join('');g.value=view.grid;g.onchange=()=>{view.grid=g.value;localStorage.setItem('fc_grid',JSON.stringify(view.grid));dirty=true};
+  const toggleCrop=()=>{if(!tgt()){toast('Load footage first');return}view.cropEdit=!view.cropEdit;if(view.cropEdit)view.mode='guide';syncInspector();dirty=true};
+  $('#cropBtn').onclick=toggleCrop;$('#cropBtn2').onclick=toggleCrop;
+  const touch=()=>{const s=tgt();for(const a of ASPK)reclampFrame2(s,a);dirty=true;syncInspector();saveSoon()};
+  $('#cropReset').onclick=()=>{const s=tgt();if(!s)return;s.crop={l:0,t:0,r:0,b:0};touch()};
+  const rot=cw=>{const s=tgt();if(!s)return;const C=s.crop,T=s.tf;
+    if(cw){s.crop={l:C.b,t:C.l,r:C.t,b:C.r};for(const a of ASPK){const f=s.frame[a];[f.x,f.y]=[1-f.y,f.x]}T.rot=(T.rot+1)%4}
+    else{s.crop={l:C.t,t:C.r,r:C.b,b:C.l};for(const a of ASPK){const f=s.frame[a];[f.x,f.y]=[f.y,1-f.x]}T.rot=(T.rot+3)%4}
+    touch()};
+  $('#rotR').onclick=()=>rot(true);$('#rotL').onclick=()=>rot(false);
+  $('#flipH').onclick=()=>{const s=tgt();if(!s)return;const C=s.crop;[C.l,C.r]=[C.r,C.l];for(const a of ASPK)s.frame[a].x=1-s.frame[a].x;s.tf.fx=!s.tf.fx;touch()};
+  $('#flipV').onclick=()=>{const s=tgt();if(!s)return;const C=s.crop;[C.t,C.b]=[C.b,C.t];for(const a of ASPK)s.frame[a].y=1-s.frame[a].y;s.tf.fy=!s.tf.fy;touch()};
+  $('#tfReset').onclick=()=>{const s=tgt();if(!s)return;s.tf={rot:0,fx:false,fy:false};s.crop={l:0,t:0,r:0,b:0};for(const a of ASPK)s.frame[a]={x:.5,y:.5,z:s.frame[a].z};touch()};
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&view.cropEdit){view.cropEdit=false;syncInspector();dirty=true}});
+})();
 $('#ctrBtn').onclick=()=>{const s=tgt();if(!s)return;s.frame[view.aspect]={x:.5,y:.5,z:1};syncInspector();saveSoon()};
 $('#frAll').onclick=()=>{const s=tgt();if(!s)return;const f=s.frame[view.aspect];for(const a of ASPK)s.frame[a]={x:f.x,y:f.y,z:a===view.aspect?f.z:1};toast('Framing copied to all sizes');saveSoon()};
 $('#expQ').value=P.exp.q;$('#expQ').onchange=e=>{P.exp.q=e.target.value;save()};

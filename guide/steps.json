@@ -1,433 +1,460 @@
 {
-  "id": "field-cut-guide-v3",
-  "eyebrow": "Field Cut",
-  "title": "Field Cut Step by Step",
-  "lede": "One small step at a time. Do the step. Tap the green button. Move on. Your place is saved if you stop.",
-  "flow": [
-    "Open",
-    "Load",
-    "Mark",
-    "Trim",
-    "Order",
-    "Preview",
-    "Fix",
-    "Size",
-    "Join",
-    "Blend",
-    "Export"
-  ],
-  "fonts": [
-    {
-      "family": "GuideSans",
-      "weight": 400,
-      "path": "../fonts/IBMPlexSans-Regular.woff2"
-    },
-    {
-      "family": "GuideSans",
-      "weight": 600,
-      "path": "../fonts/IBMPlexSans-SemiBold.woff2"
-    },
-    {
-      "family": "GuideCond",
-      "weight": 600,
-      "path": "../fonts/IBMPlexSansCondensed-SemiBold.woff2"
-    }
-  ],
-  "keys": [
-    {
-      "key": "Space",
-      "does": "Play or stop"
-    },
-    {
-      "key": "I",
-      "does": "Start here"
-    },
-    {
-      "key": "O",
-      "does": "End here"
-    },
-    {
-      "key": "Enter",
-      "does": "Save the clip"
-    },
-    {
-      "key": "A",
-      "does": "Fix the color"
-    },
-    {
-      "key": "Cmd + S",
-      "does": "Save your work"
-    }
-  ],
-  "steps": [
-    {
-      "title": "Open Field Cut",
-      "minutes": 1,
-      "where": "Finder, then the field-cut folder.",
-      "do": [
-        "Open **Finder**. Press [[Cmd + Shift + G]].",
-        "Paste **~/ClaudeCodeTest/field-cut** and press Return.",
-        "Double-click **index.html**."
-      ],
-      "see": "Field Cut opens in your browser with a dark screen and a **Load footage** button.",
-      "tip": "Use Chrome. If it opens somewhere else, right-click index.html, pick **Open With**, then **Google Chrome**. Bookmark the page so it is one click next time. Or double-click **Field Cut** on your Desktop."
-    },
-    {
-      "title": "Load your videos",
-      "minutes": 1,
-      "where": "Top right of the page.",
-      "do": [
-        "Click the orange **Load footage** button.",
-        "Pick your videos. Or drag them onto the page."
-      ],
-      "see": "Your videos line up on the left under **Footage**.",
-      "image": "images/02-load.jpg",
-      "caption": "Click Load footage (circled).",
-      "alt": "Field Cut with the Load footage button circled"
-    },
-    {
-      "title": "Find the good part",
-      "minutes": 1,
-      "where": "The picture strip under the big screen.",
-      "do": [
-        "Click a video on the left to watch it.",
-        "Drag along the strip to move through it. Or press [[Space]] to play and stop."
-      ],
-      "see": "The big screen shows the moment you stop on.",
-      "image": "images/03-find.jpg",
-      "caption": "Drag along the strip (circled).",
-      "alt": "Picture strip under the viewer circled"
-    },
-    {
-      "title": "Mark the start and the end",
-      "minutes": 1,
-      "where": "The green In and red Out buttons, or your keys.",
-      "do": [
-        "Press [[I]] where the good part starts.",
-        "Press [[O]] where it ends."
-      ],
-      "see": "**IN** and **OUT** times appear at the bottom. A green line and a gold bar show on the strip.",
-      "image": "images/04-mark.jpg",
-      "caption": "In and Out marks (circled).",
-      "alt": "In and Out times circled"
-    },
-    {
-      "title": "Save it as a clip",
-      "minutes": 1,
-      "where": "Left side, under Clips.",
-      "do": [
-        "Press [[Enter]]."
-      ],
-      "see": "A new clip appears under **Clips** and a message says it saved.",
-      "tip": "Repeat steps 3, 4 and 5 for every good moment before you fix anything.",
-      "image": "images/05-clip.jpg",
-      "caption": "Your clip shows up here (circled).",
-      "alt": "Clips list with a new clip circled"
-    },
-    {
-      "title": "Cut more pieces from the same video",
-      "minutes": 2,
-      "new": true,
-      "where": "Same video. The play strip and the **In** and **Out** buttons.",
-      "do": [
-        "Move to the next talking point you want to keep.",
-        "Press [[I]] where it starts. Press [[O]] where it ends.",
-        "Press [[Enter]] to save it as a clip.",
-        "Do this for each talking point. Skip the parts you do not need."
-      ],
-      "see": "Each piece is a new clip on the left. Gold bars on the strip show what you kept.",
-      "tip": "Cut a little off? Fix it in the next step. No need to start over.",
-      "image": "images/05b-pieces.jpg",
-      "caption": "Your pieces: the clip list and the gold bars (circled).",
-      "alt": "Clip list and strip circled"
-    },
-    {
-      "title": "Fix a cut that is a little off",
-      "minutes": 2,
-      "new": true,
-      "where": "Click the clip on the left. Two buttons appear at the bottom.",
-      "do": [
-        "Click the clip you want to fix.",
-        "Move the playhead to the new start. Click **Start here**.",
-        "Move the playhead to the new end. Click **End here**.",
-        "Keys work too: [[ [ ]] for start, [[ ] ]] for end."
-      ],
-      "see": "The time under the clip name changes. A message says how long the clip is now.",
-      "tip": "A clip must stay at least 0.3 seconds long. Use [[Left]] and [[Right]] to move one frame at a time.",
-      "image": "images/05d-trim.jpg",
-      "caption": "Start here and End here (circled).",
-      "alt": "Start here and End here circled"
-    },
-    {
-      "title": "Put the pieces in the right order",
-      "minutes": 1,
-      "new": true,
-      "where": "Left side, **Clips** list. Arrows are on the right of each clip.",
-      "do": [
-        "Click ▲ to move a clip up.",
-        "Click ▼ to move it down.",
-        "Click ✕ to throw a clip away.",
-        "Untick a box to leave a clip out for now."
-      ],
-      "see": "The small number under each name (01, 02, 03) is the order. The joined video plays top to bottom.",
-      "tip": "Names stay the same when you move clips. Only the small number changes. ✕ never touches your original video.",
-      "image": "images/05c-order.jpg",
-      "caption": "Order arrows (circled).",
-      "alt": "Move arrows circled"
-    },
-    {
-      "title": "Watch the joined video",
-      "minutes": 1,
-      "new": true,
-      "where": "Bottom bar, the **Play joined** button.",
-      "do": [
-        "Tick the clips you want. Untick the rest.",
-        "Click **Play joined**.",
-        "Watch and listen. Click **Stop preview** to stop."
-      ],
-      "see": "Clips play top to bottom. The clip playing is highlighted on the left. The button says **Stop preview**.",
-      "tip": "Same-video pieces play right after each other. A tiny pause may show when pieces come from different videos. The exported video has none.",
-      "image": "images/08b-preview.jpg",
-      "caption": "Play joined (circled).",
-      "alt": "Play joined circled"
-    },
-    {
-      "title": "Save your work",
-      "minutes": 1,
-      "where": "Top right, **Save project**.",
-      "do": [
-        "Press [[Cmd + S]]. Or click **Save project**.",
-        "Pick a place for the file. Click Save."
-      ],
-      "see": "A message says **Project saved**. You now have a file ending in **.fieldcut.json**.",
-      "tip": "Save again after big changes. The file holds your clips and fixes. It does not hold your videos, so keep those safe too.",
-      "image": "images/06-save-project.jpg",
-      "caption": "Save project (circled).",
-      "alt": "Save project button circled"
-    },
-    {
-      "title": "Pick a clip to fix",
-      "minutes": 1,
-      "where": "Left side, under Clips.",
-      "do": [
-        "Click a clip."
-      ],
-      "see": "The clip gets an orange box. The top right says **Editing clip** and its name.",
-      "image": "images/07-pick.jpg",
-      "caption": "The picked clip (circled).",
-      "alt": "Selected clip with orange box circled"
-    },
-    {
-      "title": "Make the colors right",
-      "minutes": 2,
-      "where": "Right side, **Color** tab, then **Quick fix** and **Look**.",
-      "do": [
-        "Press [[A]] or click **Auto**. That is enough for most shots.",
-        "Same lighting all night? Scroll down and click **Apply to all clips**."
-      ],
-      "see": "The picture gets brighter and cleaner right away.",
-      "tip": "**Natural** is the safe pick for news. The **A** looks are your portfolio styles.",
-      "image": "images/08-color.jpg",
-      "caption": "Auto (circled).",
-      "alt": "Auto button circled in the Color tab"
-    },
-    {
-      "title": "Check your fix",
-      "minutes": 1,
-      "where": "Bar under the big screen.",
-      "do": [
-        "Click **Before / after**.",
-        "Click it again to turn it off."
-      ],
-      "see": "The left half is the old picture. The right half is your fix.",
-      "image": "images/09-before-after.jpg",
-      "caption": "Before / after (circled).",
-      "alt": "Before after button circled"
-    },
-    {
-      "title": "Pick where it is going",
-      "minutes": 2,
-      "where": "Bar under the big screen, the size buttons.",
-      "do": [
-        "Click the size for the app: **16:9**, **9:16**, **4:5** or **1:1**.",
-        "Drag the picture so the person stays in the box.",
-        "Click **Safe zones**. Keep faces inside the bright box, away from the edges. Apps cover the edges."
-      ],
-      "see": "The bright box changes shape. Safe zones add guide lines on the picture.",
-      "tip": "Keys [[1]] [[2]] [[3]] [[4]] switch sizes.",
-      "image": "images/10-size.jpg",
-      "caption": "The size buttons (circled).",
-      "alt": "Size buttons circled"
-    },
-    {
-      "title": "Make voices clear",
-      "minutes": 1,
-      "where": "Right side, **Audio** tab. The meter is under the big screen.",
-      "do": [
-        "Leave **Voice clarity** on.",
-        "Play the clip. Talking should reach about -12 to -6 on the meter.",
-        "Too quiet? Raise **Level**."
-      ],
-      "see": "The meter bounces while someone talks.",
-      "image": "images/11-audio.jpg",
-      "caption": "Voice clarity (circled).",
-      "alt": "Voice clarity switch circled"
-    },
-    {
-      "title": "Add your name (only if you want)",
-      "minutes": 1,
-      "where": "Right side, **Text** tab, then **Watermark all exports**.",
-      "do": [
-        "Tick **Add a credit** to put your name in the corner.",
-        "Skip this step to add nothing."
-      ],
-      "see": "Your credit shows in the corner of the picture.",
-      "image": "images/12-credit.jpg",
-      "caption": "Add a credit (circled).",
-      "alt": "Add a credit checkbox circled"
-    },
-    {
-      "title": "Join the pieces into one video",
-      "minutes": 1,
-      "new": false,
-      "where": "Right side, **Export** tab. The **Clips** menu.",
-      "do": [
-        "Open the **Clips** menu.",
-        "Choose **Join ticked clips into one video**.",
-        "Tick only the clips you want in it."
-      ],
-      "see": "One file per size. Its name ends in **_Sequence**.",
-      "tip": "Pieces play back to back with straight cuts. Want a soft blend? See the next step. If colors differ, use **Apply to all clips** in the **Color** tab.",
-      "image": "images/13b-join.jpg",
-      "caption": "Clips menu set to Join (circled).",
-      "alt": "Clips menu circled"
-    },
-    {
-      "title": "Blend the pieces with a crossfade",
-      "minutes": 1,
-      "new": true,
-      "where": "Right side, **Export** tab. Two menus appear under **Clips** after you pick Join.",
-      "do": [
-        "Open **Between clips**. Pick **Straight cut** or **Crossfade**.",
-        "For a crossfade, open **Crossfade length**. Pick a time.",
-        "Click **Export ticked clips**."
-      ],
-      "see": "Picture and sound melt from one clip into the next. The video is shorter by one blend for each join.",
-      "tip": "Start with 0.5 seconds. Shorter feels like a cut. Longer feels dreamy. **Play joined** still shows straight cuts, so check the exported file.",
-      "image": "images/13c-crossfade.jpg",
-      "caption": "Between clips and Crossfade length (circled).",
-      "alt": "Two menus circled"
-    },
-    {
-      "title": "Make the videos",
-      "minutes": 1,
-      "where": "Right side, **Export** tab.",
-      "do": [
-        "Tick the sizes you want. One to three is plenty.",
-        "Tick the clips you want on the left (the little boxes).",
-        "Click **Export ticked clips**."
-      ],
-      "see": "Progress bars fill. The last part says **Finishing**. A video takes about as long as it plays.",
-      "tip": "Keep this tab open and in front until it finishes. A 5 minute video takes about 5 and a half minutes. If you see red text about memory, tick fewer sizes.",
-      "image": "images/13-export.jpg",
-      "caption": "Export ticked clips (circled).",
-      "alt": "Export button circled"
-    },
-    {
-      "title": "Save the videos to your Mac",
-      "minutes": 1,
-      "where": "Right side, Export tab, **Finished files**.",
-      "do": [
-        "Click **Save** next to each file. Or click **Save all**.",
-        "If Chrome asks about downloading several files, click **Allow**."
-      ],
-      "see": "The button says **Saved**. The files are in your **Downloads** folder.",
-      "image": "images/14-finished.jpg",
-      "caption": "Finished files (circled).",
-      "alt": "Finished files list circled"
-    },
-    {
-      "title": "Come back to it later",
-      "minutes": 2,
-      "where": "Top right, **Open project**.",
-      "do": [
-        "Open Field Cut again (step 1).",
-        "Click **Open project** and pick your **.fieldcut.json** file.",
-        "Drag the same videos onto the page."
-      ],
-      "see": "A note says the project is waiting for your videos. Once they load, your clips come back with their fixes.",
-      "image": "images/15-open-project.jpg",
-      "caption": "Open project (circled).",
-      "alt": "Open project button circled"
-    },
-    {
-      "title": "Forgot a key?",
-      "minutes": 1,
-      "where": "Top right, **Shortcuts**.",
-      "do": [
-        "Click **Shortcuts**."
-      ],
-      "see": "Every key is listed.",
-      "image": "images/16-shortcuts.jpg",
-      "caption": "Shortcuts (circled).",
-      "alt": "Shortcuts button circled"
-    }
-  ],
-  "stuck": [
-    {
-      "problem": "Pressing keys does nothing.",
-      "fix": "Click the empty dark area of the page first. A typing box may have grabbed your keys."
-    },
-    {
-      "problem": "It says it cannot read my video.",
-      "fix": "Phone video from Photos: export it again as **Most Compatible**, then load that."
-    },
-    {
-      "problem": "My joined video is in the wrong order.",
-      "fix": "Use ▲ and ▼ on the left to move clips. The top clip plays first. Then export again."
-    },
-    {
-      "problem": "My joined video has only one clip.",
-      "fix": "Tick every clip you want in the list on the left. Then check **Clips** says Join."
-    },
-    {
-      "problem": "Play joined does nothing.",
-      "fix": "Tick at least one clip on the left first. Then click **Play joined** again."
-    },
-    {
-      "problem": "I do not see the Crossfade menus.",
-      "fix": "Set the **Clips** menu to **Join ticked clips into one video** first. The crossfade menus show up under it."
-    },
-    {
-      "problem": "It says crossfade needs Fast export.",
-      "fix": "That video cannot use the fast way. The export used straight cuts. Try a clip that came straight from your camera."
-    },
-    {
-      "problem": "It says fast export is not possible for this file.",
-      "fix": "Nothing is wrong. It switches to a slower mode and still finishes. Keep the tab open."
-    },
-    {
-      "problem": "The export stopped with an error.",
-      "fix": "Tick fewer sizes, pick **Standard** quality, close other tabs and apps, and try again."
-    },
-    {
-      "problem": "Red text about memory.",
-      "fix": "Tick fewer sizes or export fewer clips at a time."
-    },
-    {
-      "problem": "The page went blank or I closed it.",
-      "fix": "Open Field Cut again (step 1). Use **Open project** and drop your videos in (step 15)."
-    },
-    {
-      "problem": "I do not hear sound while exporting.",
-      "fix": "That is normal. The file still has sound. Tick **Play sound while exporting** if you want to hear it."
-    },
-    {
-      "problem": "I do not know what to do next.",
-      "fix": "Click **Where was I?** at the top. It jumps to your next step."
-    }
-  ],
-  "finish_title": "You made it.",
-  "finish_text": "Your videos are in Downloads. Take a break.",
-  "footer": "Field Cut guide, version 2, November 2026."
+ "id": "field-cut-guide-v4",
+ "eyebrow": "Field Cut",
+ "title": "Field Cut Step by Step",
+ "lede": "One small step at a time. Do the step. Tap the green button. Move on. Your place is saved if you stop.",
+ "flow": [
+  "Open",
+  "Load",
+  "Mark",
+  "Trim",
+  "Order",
+  "Fix",
+  "Size",
+  "Crop",
+  "Join",
+  "Export"
+ ],
+ "fonts": [
+  {
+   "family": "GuideSans",
+   "weight": 400,
+   "path": "../fonts/IBMPlexSans-Regular.woff2"
+  },
+  {
+   "family": "GuideSans",
+   "weight": 600,
+   "path": "../fonts/IBMPlexSans-SemiBold.woff2"
+  },
+  {
+   "family": "GuideCond",
+   "weight": 600,
+   "path": "../fonts/IBMPlexSansCondensed-SemiBold.woff2"
+  }
+ ],
+ "keys": [
+  {
+   "key": "Space",
+   "does": "Play or stop"
+  },
+  {
+   "key": "I",
+   "does": "Start here"
+  },
+  {
+   "key": "O",
+   "does": "End here"
+  },
+  {
+   "key": "Enter",
+   "does": "Save the clip"
+  },
+  {
+   "key": "A",
+   "does": "Fix the color"
+  },
+  {
+   "key": "Cmd + S",
+   "does": "Save your work"
+  }
+ ],
+ "steps": [
+  {
+   "title": "Open Field Cut",
+   "minutes": 1,
+   "where": "Finder, then the field-cut folder.",
+   "do": [
+    "Open **Finder**. Press [[Cmd + Shift + G]].",
+    "Paste **~/ClaudeCodeTest/field-cut** and press Return.",
+    "Double-click **index.html**."
+   ],
+   "see": "Field Cut opens in your browser with a dark screen and a **Load footage** button.",
+   "tip": "Use Chrome. If it opens somewhere else, right-click index.html, pick **Open With**, then **Google Chrome**. Bookmark the page so it is one click next time. Or double-click **Field Cut** on your Desktop."
+  },
+  {
+   "title": "Load your videos",
+   "minutes": 1,
+   "where": "Top of the page, next to **Save project**.",
+   "do": [
+    "Click **Load footage**.",
+    "Pick your videos. Or drag them onto the page."
+   ],
+   "see": "Your videos line up on the left under **Footage**.",
+   "image": "images/n01-load.jpg",
+   "caption": "Click Load footage (circled).",
+   "alt": "Field Cut with the Load footage button circled"
+  },
+  {
+   "title": "Find the good part",
+   "minutes": 1,
+   "where": "The **Source** row in the Timeline at the bottom.",
+   "do": [
+    "Click a video on the left to watch it.",
+    "Click along the Source strip to jump there. Or press [[Space]] to play and stop."
+   ],
+   "see": "The big screen shows the moment you stop on. The wavy shape on the strip is the sound, so you can spot where people talk."
+  },
+  {
+   "title": "Mark the start and the end",
+   "minutes": 1,
+   "where": "The **In** and **Out** buttons under the big screen, or your keys.",
+   "do": [
+    "Press [[I]] where the good part starts.",
+    "Press [[O]] where it ends."
+   ],
+   "see": "**IN** and **OUT** times appear at the bottom. A green line and a green bar show on the strip.",
+   "image": "images/n02-mark.jpg",
+   "caption": "The In, Out and Add clip buttons (circled).",
+   "alt": "In, Out and Add clip buttons circled"
+  },
+  {
+   "title": "Save it as a clip",
+   "minutes": 1,
+   "where": "**Add clip** under the big screen, or the Enter key.",
+   "do": [
+    "Press [[Enter]]."
+   ],
+   "see": "A new clip appears under **Clips** on the left and as a block in the **Sequence** row at the bottom.",
+   "tip": "Repeat steps 3, 4 and 5 for every good moment before you fix anything.",
+   "image": "images/n03-sequence.jpg",
+   "caption": "Your clips as blocks in the Sequence row (circled).",
+   "alt": "Sequence row circled"
+  },
+  {
+   "title": "Cut more pieces from the same video",
+   "minutes": 2,
+   "new": true,
+   "where": "Same video. The play strip and the **In** and **Out** buttons.",
+   "do": [
+    "Move to the next talking point you want to keep.",
+    "Press [[I]] where it starts. Press [[O]] where it ends.",
+    "Press [[Enter]] to save it as a clip.",
+    "Do this for each talking point. Skip the parts you do not need."
+   ],
+   "see": "Each piece is a new clip on the left and a block in the Sequence row. Green bars on the Source strip show what you kept.",
+   "tip": "Cut a little off? Fix it in the next step. No need to start over."
+  },
+  {
+   "title": "Fix a cut that is a little off",
+   "minutes": 2,
+   "new": true,
+   "where": "The **Sequence** row at the bottom. Or the buttons by the play controls.",
+   "do": [
+    "Click the clip you want to fix.",
+    "Drag the left or right edge of its block in the Sequence row.",
+    "Or move the playhead and click **Start here** or **End here**.",
+    "Keys work too: [[ [ ]] for start, [[ ] ]] for end."
+   ],
+   "see": "The time under the clip name changes. A message says how long the clip is now.",
+   "tip": "A clip must stay at least 0.3 seconds long. Use [[Left]] and [[Right]] to move one frame at a time."
+  },
+  {
+   "title": "Put the pieces in the right order",
+   "minutes": 1,
+   "new": true,
+   "where": "The **Sequence** row at the bottom. Arrows are also beside each clip on the left.",
+   "do": [
+    "Drag a block left or right in the Sequence row.",
+    "Or click ▲ and ▼ beside a clip on the left.",
+    "Click ✕ beside a clip to throw it away.",
+    "Untick a box to leave a clip out for now."
+   ],
+   "see": "The small number under each name (01, 02, 03) is the order. The joined video plays left to right.",
+   "tip": "Names stay the same when you move clips. Only the small number changes. ✕ never touches your original video.",
+   "image": "images/n03-sequence.jpg",
+   "caption": "Drag blocks to reorder (circled).",
+   "alt": "Sequence row circled"
+  },
+  {
+   "title": "Undo a mistake",
+   "minutes": 1,
+   "new": true,
+   "where": "Top left of the page, **Undo** and **Redo**.",
+   "do": [
+    "Press [[Cmd + Z]] to take back your last change.",
+    "Press [[Shift + Cmd + Z]] to put it back."
+   ],
+   "see": "The clip, the trim or the fix goes back the way it was.",
+   "tip": "Undo remembers moves, trims, fixes and deletes. It forgets everything when you open a project."
+  },
+  {
+   "title": "Watch the joined video",
+   "minutes": 1,
+   "new": true,
+   "where": "**Play joined** beside the play controls.",
+   "do": [
+    "Tick the clips you want. Untick the rest.",
+    "Click **Play joined**.",
+    "Watch and listen. Click **Stop preview** to stop."
+   ],
+   "see": "Clips play top to bottom. The clip playing is highlighted on the left. The button says **Stop preview**.",
+   "tip": "Play joined shows straight cuts. Crossfades only show in the exported video."
+  },
+  {
+   "title": "Save your work",
+   "minutes": 1,
+   "where": "Top of the page, **Save project**.",
+   "do": [
+    "Press [[Cmd + S]]. Or click **Save project**.",
+    "Pick a place for the file. Click Save."
+   ],
+   "see": "A message says **Project saved**. You now have a file ending in **.fieldcut.json**.",
+   "tip": "Save again after big changes. The file holds your clips and fixes. It does not hold your videos, so keep those safe too."
+  },
+  {
+   "title": "Pick a clip to fix",
+   "minutes": 1,
+   "where": "Left side, under Clips, or the blocks in the Sequence row.",
+   "do": [
+    "Click a clip."
+   ],
+   "see": "The clip gets an orange box. The top right says **Editing clip** and its name."
+  },
+  {
+   "title": "Make the colors right",
+   "minutes": 2,
+   "where": "Right side, **Color** tab, then **Quick fix** and **Look**.",
+   "do": [
+    "Press [[A]] or click **Auto**. That is enough for most shots.",
+    "Same lighting all night? Scroll down and click **Apply to all clips**."
+   ],
+   "see": "The picture gets brighter and cleaner right away.",
+   "tip": "**Natural** is the safe pick for news. The **A** looks are your portfolio styles."
+  },
+  {
+   "title": "Check your fix",
+   "minutes": 1,
+   "where": "Bar under the big screen.",
+   "do": [
+    "Click **Before / after**.",
+    "Click it again to turn it off."
+   ],
+   "see": "The left half is the old picture. The right half is your fix."
+  },
+  {
+   "title": "Pick where it is going",
+   "minutes": 2,
+   "where": "The bar under the big screen.",
+   "do": [
+    "Click the size for the app: **16:9**, **9:16**, **4:5** or **1:1**.",
+    "In **Full + guide** view, drag the picture to move the box. Scroll to zoom.",
+    "Click **Safe zones**. Keep faces inside the box, away from the edges. Apps cover the edges."
+   ],
+   "see": "The bright box changes shape. Safe zones add guide lines on the picture.",
+   "tip": "Keys [[1]] [[2]] [[3]] [[4]] switch sizes."
+  },
+  {
+   "title": "Crop the picture",
+   "minutes": 2,
+   "new": true,
+   "where": "The **Crop** button under the big screen.",
+   "do": [
+    "Click **Crop**. A box appears on the picture.",
+    "Drag the box to move it. Drag a corner or edge to resize it.",
+    "Click **Crop** again, or press [[Esc]], when you like it.",
+    "Want it back? Click **Reset crop** in the **Frame** tab."
+   ],
+   "see": "The size shows at the top right of the picture. The dark area outside the box is cut off.",
+   "tip": "Crop first. Then pick the frame size and move the picture inside it. The crop goes into the exported video.",
+   "image": "images/n04-crop.jpg",
+   "caption": "Crop, with the box on the picture (circled).",
+   "alt": "Crop button circled with a crop box on the picture"
+  },
+  {
+   "title": "Turn or flip a sideways clip",
+   "minutes": 1,
+   "new": true,
+   "where": "Right side, **Frame** tab. Scroll to **Rotate and flip**.",
+   "do": [
+    "Click **Rotate left** or **Rotate right** to turn it.",
+    "Click **Flip left/right** or **Flip up/down** to mirror it.",
+    "Click **Reset** to go back."
+   ],
+   "see": "The picture turns right away. The note under the buttons says what you did.",
+   "tip": "Mirroring flips any writing in the video. Use it only when you must.",
+   "image": "images/n05-rotate.jpg",
+   "caption": "Rotate and flip buttons (circled).",
+   "alt": "Rotate and flip buttons circled"
+  },
+  {
+   "title": "Line up the shot with a grid",
+   "minutes": 1,
+   "new": true,
+   "where": "The grid menu under the big screen. It says **Rule of thirds**.",
+   "do": [
+    "Open the menu. Pick **Rule of thirds**, **Golden ratio**, **Center cross**, **Thirds + center** or **Diagonals**.",
+    "Put eyes or faces where lines cross.",
+    "Pick **No grid** to hide it."
+   ],
+   "see": "Thin lines show on the picture.",
+   "tip": "The grid is only a guide. It never shows up in your exported video.",
+   "image": "images/n06-grid.jpg",
+   "caption": "The grid menu (circled).",
+   "alt": "Grid menu circled"
+  },
+  {
+   "title": "Make voices clear",
+   "minutes": 1,
+   "where": "Right side, **Audio** tab. The meter is under the big screen.",
+   "do": [
+    "Leave **Voice clarity** on.",
+    "Play the clip. Talking should reach about -12 to -6 on the meter.",
+    "Too quiet? Raise **Level**."
+   ],
+   "see": "The meter bounces while someone talks."
+  },
+  {
+   "title": "Add your name (only if you want)",
+   "minutes": 1,
+   "where": "Right side, **Text** tab, then **Watermark all exports**.",
+   "do": [
+    "Tick **Add a credit** to put your name in the corner.",
+    "Skip this step to add nothing."
+   ],
+   "see": "Your credit shows in the corner of the picture."
+  },
+  {
+   "title": "Join the pieces into one video",
+   "minutes": 1,
+   "new": false,
+   "where": "Top right **Export...** button. In the Export window, the **Clips** menu.",
+   "do": [
+    "Click **Export...** at the top right.",
+    "Open the **Clips** menu. Choose **Join ticked clips into one video**.",
+    "Tick only the clips you want in it."
+   ],
+   "see": "One file per size. Its name ends in **_Sequence**.",
+   "tip": "Pieces play back to back with straight cuts unless you pick a crossfade in the next step. If colors differ, use **Apply to all clips** in the **Color** tab.",
+   "image": "images/n08-export.jpg",
+   "caption": "The Export window with Join chosen (circled).",
+   "alt": "Export window"
+  },
+  {
+   "title": "Blend the pieces with a crossfade",
+   "minutes": 1,
+   "new": true,
+   "where": "Bottom bar, **Between clips**. Or the same menu in the Export window.",
+   "do": [
+    "Click **Crossfade** (the other choice is **Straight cut**).",
+    "Pick a length such as **0.5 s**.",
+    "Overlaps show as small dashes in the Sequence row."
+   ],
+   "see": "Picture and sound melt from one clip into the next. The video is shorter by one blend for each join.",
+   "tip": "Start with 0.5 seconds. Shorter feels like a cut. Longer feels dreamy. Play joined shows straight cuts, so check the exported file.",
+   "image": "images/n07-crossfade.jpg",
+   "caption": "Between clips: Crossfade (circled).",
+   "alt": "Crossfade button circled"
+  },
+  {
+   "title": "Make the videos",
+   "minutes": 1,
+   "where": "Top right **Export...** button, then the Export window.",
+   "do": [
+    "Click **Export...**.",
+    "Tick the sizes you want. One to three is plenty.",
+    "Tick the clips you want on the left (the little boxes).",
+    "Click **Export ticked clips** at the bottom of the window."
+   ],
+   "see": "Progress bars fill. The last part says **Finishing**. A video takes about as long as it plays.",
+   "tip": "Keep this tab open and in front until it finishes. A 5 minute video takes about 5 and a half minutes. If you see red text about memory, tick fewer sizes.",
+   "image": "images/n08-export.jpg",
+   "caption": "The Export window.",
+   "alt": "Export window"
+  },
+  {
+   "title": "Save the videos to your Mac",
+   "minutes": 1,
+   "where": "The Export window, **Finished files**.",
+   "do": [
+    "Click **Save** next to each file. Or click **Save all**.",
+    "If Chrome asks about downloading several files, click **Allow**."
+   ],
+   "see": "The button says **Saved**. The files are in your **Downloads** folder."
+  },
+  {
+   "title": "Come back to it later",
+   "minutes": 2,
+   "where": "Top of the page, **Open project**.",
+   "do": [
+    "Open Field Cut again (step 1).",
+    "Click **Open project** and pick your **.fieldcut.json** file.",
+    "Drag the same videos onto the page."
+   ],
+   "see": "A note says the project is waiting for your videos. Once they load, your clips come back with their fixes."
+  },
+  {
+   "title": "Forgot a key?",
+   "minutes": 1,
+   "where": "Top of the page, **Shortcuts**.",
+   "do": [
+    "Click **Shortcuts**."
+   ],
+   "see": "Every key is listed."
+  }
+ ],
+ "stuck": [
+  {
+   "problem": "Pressing keys does nothing.",
+   "fix": "Click the empty dark area of the page first. A typing box may have grabbed your keys."
+  },
+  {
+   "problem": "It says it cannot read my video.",
+   "fix": "Phone video from Photos: export it again as **Most Compatible**, then load that."
+  },
+  {
+   "problem": "My joined video is in the wrong order.",
+   "fix": "Use ▲ and ▼ on the left to move clips. The top clip plays first. Then export again."
+  },
+  {
+   "problem": "My joined video has only one clip.",
+   "fix": "Tick every clip you want in the list on the left. Then open **Export...** and check **Clips** says Join."
+  },
+  {
+   "problem": "Play joined does nothing.",
+   "fix": "Tick at least one clip on the left first. Then click **Play joined** again."
+  },
+  {
+   "problem": "I do not see Crossfade.",
+   "fix": "Look at the bottom bar, **Between clips**. You need two or more ticked clips."
+  },
+  {
+   "problem": "It says crossfade needs Fast export.",
+   "fix": "That video cannot use the fast way. The export used straight cuts. Try a clip that came straight from your camera."
+  },
+  {
+   "problem": "It says fast export is not possible for this file.",
+   "fix": "Nothing is wrong. It switches to a slower mode and still finishes. Keep the tab open."
+  },
+  {
+   "problem": "The export stopped with an error.",
+   "fix": "Tick fewer sizes, pick **Standard** quality, close other tabs and apps, and try again."
+  },
+  {
+   "problem": "Red text about memory.",
+   "fix": "Tick fewer sizes or export fewer clips at a time."
+  },
+  {
+   "problem": "The page went blank or I closed it.",
+   "fix": "Open Field Cut again (step 1). Use **Open project** and drop your videos in (step 15)."
+  },
+  {
+   "problem": "I do not hear sound while exporting.",
+   "fix": "That is normal. The file still has sound. Tick **Play sound while exporting** if you want to hear it."
+  },
+  {
+   "problem": "I do not know what to do next.",
+   "fix": "Click **Where was I?** at the top. It jumps to your next step."
+  },
+  {
+   "problem": "My crop box will not move.",
+   "fix": "Click **Crop** first so the box shows. Drag inside the box to move it. Drag a corner to resize it."
+  },
+  {
+   "problem": "The picture looks sideways.",
+   "fix": "Open the **Frame** tab. Click **Rotate left** or **Rotate right**."
+  }
+ ],
+ "finish_title": "You made it.",
+ "finish_text": "Your videos are in Downloads. Take a break.",
+ "footer": "Field Cut guide, version 4, November 2026."
 }

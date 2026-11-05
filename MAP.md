@@ -39,3 +39,9 @@ Built from `original/index.html` (3,018 lines, 1 MB). Line numbers are for the w
 - Sequence lane: drag a block to reorder, drag a block edge to trim, crossfade overlaps are drawn hatched. Source lane: drag the edge of the selected clip to trim.
 - Colors: black panels, forest green accent, vintage cream (Out marker, title), navy (placeholders and one clip color). Record dot stays red.
 - Undo/redo: search `undo and redo`. Waveform: search `computePeaks`.
+
+## Crop, grid, rotate and flip (added Nov 4)
+- Settings per clip/source live in `defS()`: `crop {l,t,r,b}` (fractions of the rotated picture) and `tf {rot,fx,fy}`.
+- `dispDims` gives the picture size after rotation. `cropFor` works in that space and returns the source rectangle.
+- The vertex shader (`VS`) uses `uTf` to rotate/flip the sampling position.
+- `drawGrid` and `GRIDS` draw the preview-only grids. Crop box drawing is in `drawPreview` (`view.cropEdit`), its mouse handling is next to "drag to reframe".

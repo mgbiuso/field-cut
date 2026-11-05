@@ -44,7 +44,7 @@ If Field Cut cannot read a file this way (an unusual codec, or a fragmented MP4)
 The console (Chrome menu, View, Developer, JavaScript Console) prints a line starting FCTIMING after each export with where the time went.
 
 ## The step-by-step guide
-Open `guide/field-cut-guide.html` (also copied to Downloads as "Field Cut Step by Step guide.html"). It has 22 steps with pictures (including cutting a long speech into pieces and joining them), tick boxes that remember your place, and a "Stuck?" box. To change it, edit `guide/steps.json` and rebuild:
+Open `guide/field-cut-guide.html` (also copied to Downloads as "Field Cut Step by Step guide.html"). It has 26 steps with pictures (including cutting a long speech into pieces and joining them), tick boxes that remember your place, and a "Stuck?" box. To change it, edit `guide/steps.json` and rebuild:
 
     python3 ~/ClaudeCodeTest/guide-template/build_guide.py guide/steps.json guide/field-cut-guide.html
 
@@ -58,4 +58,6 @@ Open `guide/field-cut-guide.html` (also copied to Downloads as "Field Cut Step b
 - Safari (optional). Fast export needs a newer Safari. If it cannot run, it falls back to the slower backup mode.
 
 ## New layout (Nov. 4, 2026)
-The window now has a timeline along the bottom (source strip with sound waveform on top, your clip order below it). Export lives behind the **Export...** button. Undo and Redo are in the header (Cmd+Z, Shift+Cmd+Z). The earlier layout is kept as `index-classic.html`. The step-by-step guide still shows the earlier layout and needs new pictures.
+The window now has a timeline along the bottom (source strip with sound waveform on top, your clip order below it). Export lives behind the **Export...** button. Undo and Redo are in the header (Cmd+Z, Shift+Cmd+Z). The earlier layout is kept as `index-classic.html`. The step-by-step guide has new pictures for the main steps; some later steps are text only.
+
+New: **Crop** (box on the picture), composition **grids** (preview only), and **Rotate and flip** (Frame tab). All three apply to exports and stills.
