@@ -213,6 +213,9 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
         <button class="tbtn mi" id="inBtn" type="button" title="Mark In (I)">In</button>
         <button class="tbtn mo" id="outBtn" type="button" title="Mark Out (O)">Out</button>
         <button class="btn sm primary" id="addBtn" type="button" title="Save In to Out as a clip (Enter)">Add clip</button>
+        <button class="btn sm" id="trimIn" type="button" hidden title="Move the start of the selected clip to the playhead ([)">Start here</button>
+        <button class="btn sm" id="trimOut" type="button" hidden title="Move the end of the selected clip to the playhead (])">End here</button>
+        <button class="btn sm" id="joinBtn" type="button" title="Play all ticked clips in order, one after another">Play joined</button>
         <span class="tcsmall" id="marks"></span>
         <span class="sp"></span>
         <span class="tcsmall" id="peak">-∞ dB</span><div class="meter" title="Audio peak"><i id="meterBar"></i></div>
@@ -347,6 +350,7 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
       <kbd>Enter</kbd><span>Save In to Out as a clip</span>
       <kbd>Up / Down</kbd><span>Previous / next clip</span>
       <kbd>P</kbd><span>Play the selected clip with its fades</span>
+      <kbd>[ / ]</kbd><span>Trim the selected clip: start / end at the playhead</span>
       <kbd>A</kbd><span>Auto color on this frame</span>
       <kbd>\</kbd><span>Before / after</span>
       <kbd>1 2 3 4</kbd><span>16:9, 9:16, 4:5, 1:1</span>
@@ -2597,11 +2601,11 @@ function renderClips(){
   $('#clipCount').textContent=clips.length+(clips.length===1?' clip':' clips');$('#clipHint').hidden=clips.length>0;expSummary();drawScrub();
 }
 async function selectClip(id,keepFocus){
-  const c=clips.find(x=>x.id===id);if(!c)return;cur.clip=id;playingClip=null;
+  const c=clips.find(x=>x.id===id);if(!c)return;cur.clip=id;playingClip=null;seq=null;
   await selectSource(c.src,c.in+.001);renderClips();renderTarget();syncInspector();applyAudio(c.s);
 }
 function renderTarget(){
-  const c=curClip(),s=curSrc();const T=$('#target');T.textContent='';const sp=document.createElement('span');
+  const c=curClip(),s=curSrc();$('#trimIn').hidden=$('#trimOut').hidden=!c;const T=$('#target');T.textContent='';const sp=document.createElement('span');
   if(c){sp.append('Editing clip ');const b=document.createElement('b');b.textContent=c.name;sp.append(b);
     const back=document.createElement('button');back.type='button';back.className='btn sm';back.textContent='Back to source';back.onclick=()=>{cur.clip=null;renderClips();renderSources();renderTarget();syncInspector()};T.append(sp,back)}
   else if(s){sp.append('Editing source ');const b=document.createElement('b');b.textContent=s.name;sp.append(b,document.createTextNode('. New clips copy these settings.'));T.append(sp)}
@@ -2690,8 +2694,25 @@ function autoColor(){
 
 /* ---------- transport ---------- */
 function step(sec){if(!curSrc())return;vid.pause();vid.currentTime=clamp(vid.currentTime+sec,0,curSrc().dur);dirty=true}
-function togglePlay(){if(!curSrc())return;ensureAudio();playingClip=null;if(vid.paused){applyAudio(tgt());A.fade&&(A.fade.gain.value=1);vid.playbackRate=1;vid.play()}else vid.pause()}
-function playSel(){const c=curClip();if(!c)return;ensureAudio();applyAudio(c.s);playingClip=c.id;vid.currentTime=c.in;vid.playbackRate=1;vid.play()}
+/* trim a saved clip, and play all ticked clips in order (preview of the joined video) */
+let seq=null;
+function trimClip(which){const c=curClip();if(!c){toast('Click a clip in the list first');return}const s=srcById(c.src);const t=vid.currentTime;
+  if(which==='in'){if(t>c.out-.3){toast('The start must be at least 0.3 s before the end');return}c.in=Math.max(0,t);
+    const x=document.createElement('canvas');x.width=160;x.height=90;const g=x.getContext('2d');const r=Math.max(160/s.w,90/s.h);g.drawImage(vid,(160-s.w*r)/2,(90-s.h*r)/2,s.w*r,s.h*r);c.thumb=x}
+  else{if(t<c.in+.3){toast('The end must be at least 0.3 s after the start');return}c.out=Math.min(s.dur,t)}
+  renderClips();drawScrub();save();toast(c.name+' is now '+dur(c.out-c.in)+' long')}
+async function seqLoad(q,c){playingClip=null;
+  if(cur.src!==c.src){vid.pause();await selectSource(c.src,c.in)}else{vid.currentTime=c.in;if(vid.paused)await once(vid,'seeked')}
+  if(seq!==q)return;cur.clip=c.id;applyAudio(c.s);if(A.fade)A.fade.gain.value=fadeAt(c.s,0,c.out-c.in);playingClip=c.id;renderClips();renderTarget();syncInspector();
+  vid.playbackRate=1;if(vid.paused)await vid.play().catch(()=>{});q.busy=false}
+function stopJoined(msg){if(!seq)return;seq=null;playingClip=null;vid.pause();if(msg)toast(msg)}
+async function playJoined(){if(seq){stopJoined();return}
+  const list=clips.filter(c=>c.on&&srcById(c.src));if(!list.length){toast('Tick at least one clip first');return}
+  if(exporting)return;ensureAudio();const q={list,i:0,busy:true};seq=q;await seqLoad(q,list[0])}
+function seqNext(){const q=seq,n=q.list[q.i+1];if(!n){stopJoined('Preview finished');return}
+  q.i++;q.busy=true;seqLoad(q,n)}
+function togglePlay(){if(!curSrc())return;ensureAudio();playingClip=null;seq=null;if(vid.paused){applyAudio(tgt());A.fade&&(A.fade.gain.value=1);vid.playbackRate=1;vid.play()}else vid.pause()}
+function playSel(){const c=curClip();if(!c)return;seq=null;ensureAudio();applyAudio(c.s);playingClip=c.id;vid.currentTime=c.in;vid.playbackRate=1;vid.play()}
 function markIn(){if(!curSrc())return;marks.in=vid.currentTime;if(marks.out!=null&&marks.out<=marks.in)marks.out=null;showMarks()}
 function markOut(){if(!curSrc())return;marks.out=vid.currentTime;if(marks.in!=null&&marks.in>=marks.out)marks.in=null;showMarks()}
 function showMarks(){const s=curSrc(),f=fpsOf(s);const e=$('#marks');e.textContent='';
@@ -2727,7 +2748,7 @@ function drawScrub(){
 }
 let scrubbing=false;
 function scrubTo(e){const s=curSrc();if(!s)return;const r=scrubC.getBoundingClientRect();vid.currentTime=clamp((e.clientX-r.left)/r.width,0,1)*s.dur;dirty=true;drawScrub()}
-scrubC.addEventListener('pointerdown',e=>{if(!curSrc())return;scrubbing=true;vid.pause();scrubC.setPointerCapture(e.pointerId);scrubTo(e)});
+scrubC.addEventListener('pointerdown',e=>{if(!curSrc())return;stopJoined();scrubbing=true;vid.pause();scrubC.setPointerCapture(e.pointerId);scrubTo(e)});
 scrubC.addEventListener('pointermove',e=>{if(scrubbing)scrubTo(e)});
 scrubC.addEventListener('pointerup',()=>scrubbing=false);
 
@@ -2745,8 +2766,10 @@ function loop(t){
   requestAnimationFrame(loop);if(exporting)return;
   const s=curSrc();
   if(s){
-    if(playingClip){const c=clips.find(x=>x.id===playingClip);if(c&&vid.currentTime>=c.out){vid.pause();vid.currentTime=c.out;playingClip=null}
+    if(playingClip){const c=clips.find(x=>x.id===playingClip);if(c&&vid.currentTime>=c.out){if(seq)seqNext();else{vid.pause();vid.currentTime=c.out;playingClip=null}}
       if(c&&A.fade)A.fade.gain.setTargetAtTime(fadeAt(c.s,clamp(vid.currentTime-c.in,0,c.out-c.in),c.out-c.in),AC.currentTime,.015)}
+    if(seq&&vid.paused&&!seq.busy)stopJoined('Preview stopped');
+    $('#joinBtn').textContent=seq?'Stop preview':'Play joined';
     if(!vid.paused||dirty||view.mode==='guide'&&dragging){drawPreview();dirty=false}
     if(!vid.paused||scrubbing)drawScrub();
     $('#tc').textContent=tc(vid.currentTime,fpsOf(s));$('#playBtn').textContent=vid.paused?'Play':'Pause';
@@ -2824,7 +2847,7 @@ async function runExport(){
   try{if(!RE)RE=new Renderer(glExp)}catch(e){toast('WebGL2 is off in this browser');return}
   try{await document.fonts.load('600 40px "IBM Plex Sans"');await document.fonts.load('400 30px "IBM Plex Sans"');await document.fonts.load('500 30px "IBM Plex Sans"')}catch(e){}
   const jobs=P.exp.mode==='join'?[{name:`${slug(P.event)}_Sequence`,clips:sel}]:sel.map(c=>({name:`${slug(P.event)}_${String(clips.indexOf(c)+1).padStart(2,'0')}_${slug(c.name)}`,clips:[c]}));
-  exporting=true;$('#brand').classList.add('rec');expSummary();vid.pause();playingClip=null;
+  exporting=true;$('#brand').classList.add('rec');expSummary();seq=null;vid.pause();playingClip=null;
   A.mon.gain.value=P.exp.listen?1:0;recNode.port.postMessage(true);
   const box=$('#jobs');if(!results.length)box.textContent='';
   const onHide=()=>{if(document.hidden)toast('Export needs this tab in front. Switch back to keep it smooth.',5000)};document.addEventListener('visibilitychange',onHide);
@@ -3124,7 +3147,7 @@ addEventListener('dragover',e=>e.preventDefault());
 addEventListener('drop',e=>{e.preventDefault();dragN=0;$('#empty').classList.remove('over');if(sources.length)$('#empty').hidden=true;if(e.dataTransfer.files.length)addFiles(e.dataTransfer.files)});
 $('#playBtn').onclick=togglePlay;$('#bS').onclick=()=>step(-1);$('#fS').onclick=()=>step(1);
 $('#bF').onclick=()=>step(-1/fpsOf(curSrc()));$('#fF').onclick=()=>step(1/fpsOf(curSrc()));
-$('#inBtn').onclick=markIn;$('#outBtn').onclick=markOut;$('#addBtn').onclick=addClip;
+$('#trimIn').onclick=()=>trimClip('in');$('#trimOut').onclick=()=>trimClip('out');$('#joinBtn').onclick=playJoined;$('#inBtn').onclick=markIn;$('#outBtn').onclick=markOut;$('#addBtn').onclick=addClip;
 $('#eventName').value=P.event;$('#eventName').oninput=e=>{P.event=e.target.value;saveSoon()};
 $('#lookAmt').oninput=e=>{const s=tgt();if(!s)return;s.lookAmt=+e.target.value;$('#lookAmtV').textContent=s.lookAmt+'%';dirty=true;saveSoon()};
 $('#auVoice').onchange=e=>{const s=tgt();if(!s)return;s.au.voice=e.target.checked;applyAudio(s);saveSoon()};
@@ -3160,6 +3183,7 @@ addEventListener('keydown',e=>{
   else if(k==='x'||k==='X'){marks={in:null,out:null};showMarks()}
   else if(k==='Enter'){if(tag==='button')return;addClip()}
   else if(k==='p'||k==='P')playSel();
+  else if(k==='[')trimClip('in');else if(k===']')trimClip('out');
   else if(k==='a'||k==='A')autoColor();
   else if(k==='\\'){view.compare=!view.compare;$('#cmpBtn').classList.toggle('on',view.compare);dirty=true}
   else if(k==='ArrowUp'||k==='ArrowDown'){if(tag==='input')return;if(!clips.length)return;let i=clips.findIndex(c=>c.id===cur.clip);i=k==='ArrowUp'?Math.max(0,i-1):Math.min(clips.length-1,i+1);selectClip(clips[i].id)}

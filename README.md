@@ -44,7 +44,7 @@ If Field Cut cannot read a file this way (an unusual codec, or a fragmented MP4)
 The console (Chrome menu, View, Developer, JavaScript Console) prints a line starting FCTIMING after each export with where the time went.
 
 ## The step-by-step guide
-Open `guide/field-cut-guide.html` (also copied to Downloads as "Field Cut Step by Step guide.html"). It has 16 steps with pictures, tick boxes that remember your place, and a "Stuck?" box. To change it, edit `guide/steps.json` and rebuild:
+Open `guide/field-cut-guide.html` (also copied to Downloads as "Field Cut Step by Step guide.html"). It has 21 steps with pictures (including cutting a long speech into pieces and joining them), tick boxes that remember your place, and a "Stuck?" box. To change it, edit `guide/steps.json` and rebuild:
 
     python3 ~/ClaudeCodeTest/guide-template/build_guide.py guide/steps.json guide/field-cut-guide.html
 

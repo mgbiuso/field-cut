@@ -1,5 +1,5 @@
 {
-  "id": "field-cut-guide-v2",
+  "id": "field-cut-guide-v3",
   "eyebrow": "Field Cut",
   "title": "Field Cut Step by Step",
   "lede": "One small step at a time. Do the step. Tap the green button. Move on. Your place is saved if you stop.",
@@ -7,9 +7,12 @@
     "Open",
     "Load",
     "Mark",
-    "Save",
+    "Trim",
+    "Order",
+    "Preview",
     "Fix",
     "Size",
+    "Join",
     "Export"
   ],
   "fonts": [
@@ -66,7 +69,7 @@
         "Double-click **index.html**."
       ],
       "see": "Field Cut opens in your browser with a dark screen and a **Load footage** button.",
-      "tip": "Use Chrome. If it opens somewhere else, right-click index.html, pick **Open With**, then **Google Chrome**. Bookmark the page so it is one click next time."
+      "tip": "Use Chrome. If it opens somewhere else, right-click index.html, pick **Open With**, then **Google Chrome**. Bookmark the page so it is one click next time. Or double-click **Field Cut** on your Desktop."
     },
     {
       "title": "Load your videos",
@@ -121,9 +124,75 @@
       "alt": "Clips list with a new clip circled"
     },
     {
-      "title": "Save your work",
+      "title": "Cut more pieces from the same video",
+      "minutes": 2,
+      "new": true,
+      "where": "Same video. The play strip and the **In** and **Out** buttons.",
+      "do": [
+        "Move to the next talking point you want to keep.",
+        "Press [[I]] where it starts. Press [[O]] where it ends.",
+        "Press [[Enter]] to save it as a clip.",
+        "Do this for each talking point. Skip the parts you do not need."
+      ],
+      "see": "Each piece is a new clip on the left. Gold bars on the strip show what you kept.",
+      "tip": "Cut a little off? Fix it in the next step. No need to start over.",
+      "image": "images/05b-pieces.jpg",
+      "caption": "Your pieces: the clip list and the gold bars (circled).",
+      "alt": "Clip list and strip circled"
+    },
+    {
+      "title": "Fix a cut that is a little off",
+      "minutes": 2,
+      "new": true,
+      "where": "Click the clip on the left. Two buttons appear at the bottom.",
+      "do": [
+        "Click the clip you want to fix.",
+        "Move the playhead to the new start. Click **Start here**.",
+        "Move the playhead to the new end. Click **End here**.",
+        "Keys work too: [[ [ ]] for start, [[ ] ]] for end."
+      ],
+      "see": "The time under the clip name changes. A message says how long the clip is now.",
+      "tip": "A clip must stay at least 0.3 seconds long. Use [[Left]] and [[Right]] to move one frame at a time.",
+      "image": "images/05d-trim.jpg",
+      "caption": "Start here and End here (circled).",
+      "alt": "Start here and End here circled"
+    },
+    {
+      "title": "Put the pieces in the right order",
       "minutes": 1,
       "new": true,
+      "where": "Left side, **Clips** list. Arrows are on the right of each clip.",
+      "do": [
+        "Click ▲ to move a clip up.",
+        "Click ▼ to move it down.",
+        "Click ✕ to throw a clip away.",
+        "Untick a box to leave a clip out for now."
+      ],
+      "see": "The small number under each name (01, 02, 03) is the order. The joined video plays top to bottom.",
+      "tip": "Names stay the same when you move clips. Only the small number changes. ✕ never touches your original video.",
+      "image": "images/05c-order.jpg",
+      "caption": "Order arrows (circled).",
+      "alt": "Move arrows circled"
+    },
+    {
+      "title": "Watch the joined video",
+      "minutes": 1,
+      "new": true,
+      "where": "Bottom bar, the **Play joined** button.",
+      "do": [
+        "Tick the clips you want. Untick the rest.",
+        "Click **Play joined**.",
+        "Watch and listen. Click **Stop preview** to stop."
+      ],
+      "see": "Clips play top to bottom. The clip playing is highlighted on the left. The button says **Stop preview**.",
+      "tip": "Same-video pieces play right after each other. A tiny pause may show when pieces come from different videos. The exported video has none.",
+      "image": "images/08b-preview.jpg",
+      "caption": "Play joined (circled).",
+      "alt": "Play joined circled"
+    },
+    {
+      "title": "Save your work",
+      "minutes": 1,
       "where": "Top right, **Save project**.",
       "do": [
         "Press [[Cmd + S]]. Or click **Save project**.",
@@ -217,6 +286,22 @@
       "alt": "Add a credit checkbox circled"
     },
     {
+      "title": "Join the pieces into one video",
+      "minutes": 1,
+      "new": true,
+      "where": "Right side, **Export** tab. The **Clips** menu.",
+      "do": [
+        "Open the **Clips** menu.",
+        "Choose **Join ticked clips into one video**.",
+        "Tick only the clips you want in it."
+      ],
+      "see": "One file per size. Its name ends in **_Sequence**.",
+      "tip": "Pieces play back to back with straight cuts. For a soft dip, set **Fade** in the **Frame** tab, under **Timing**. If colors differ, use **Apply to all clips** in the **Color** tab.",
+      "image": "images/13b-join.jpg",
+      "caption": "Clips menu set to Join (circled).",
+      "alt": "Clips menu circled"
+    },
+    {
       "title": "Make the videos",
       "minutes": 1,
       "where": "Right side, **Export** tab.",
@@ -247,7 +332,6 @@
     {
       "title": "Come back to it later",
       "minutes": 2,
-      "new": true,
       "where": "Top right, **Open project**.",
       "do": [
         "Open Field Cut again (step 1).",
@@ -280,6 +364,18 @@
     {
       "problem": "It says it cannot read my video.",
       "fix": "Phone video from Photos: export it again as **Most Compatible**, then load that."
+    },
+    {
+      "problem": "My joined video is in the wrong order.",
+      "fix": "Use ▲ and ▼ on the left to move clips. The top clip plays first. Then export again."
+    },
+    {
+      "problem": "My joined video has only one clip.",
+      "fix": "Tick every clip you want in the list on the left. Then check **Clips** says Join."
+    },
+    {
+      "problem": "Play joined does nothing.",
+      "fix": "Tick at least one clip on the left first. Then click **Play joined** again."
     },
     {
       "problem": "It says fast export is not possible for this file.",
