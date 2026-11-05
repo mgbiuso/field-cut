@@ -2806,7 +2806,10 @@ function makeAudioSink(aenc,sr){
   };
 }
 function expSummary(){const n=clips.filter(c=>c.on).length;const t=clips.filter(c=>c.on).reduce((a,c)=>a+c.out-c.in,0);const k=P.exp.aspects.length;const files=P.exp.mode==='join'?k:n*k;
-  $('#expSum').textContent=n?`${n} clip${n>1?'s':''}, ${dur(t)} total, ${k} size${k>1?'s':''}: ${files} file${files>1?'s':''}. Takes about ${dur(t+n*1.5)}.`:'Tick at least one clip in the Clips list.';
+  // each finished file is built in memory; about 1.5x the file size is needed while it is written
+  const needGB=k*t*(+P.exp.q*1e6)/8/1e9*1.5,limitGB=(navigator.deviceMemory||8)*.25,big=n&&needGB>limitGB,slow=needGB>limitGB?1.4:1.1; // measured: 2 sizes x 5 min took 1.08x, 3 sizes x 5 min on an 8 GB Mac took 1.39x
+  $('#expSum').textContent=n?`${n} clip${n>1?'s':''}, ${dur(t)} total, ${k} size${k>1?'s':''}: ${files} file${files>1?'s':''}. Takes about ${dur(t*slow+n*1.5)}.`+(big?` Large export: needs about ${needGB.toFixed(1)} GB of memory. Close other apps first, or tick fewer sizes. Two sizes at a time runs smoothly.`:''):'Tick at least one clip in the Clips list.';
+  $('#expSum').style.color=big?'var(--warn)':'';
   $('#expBtn').disabled=!n||!k||exporting}
 function buildExpAsp(){const box=$('#expAsp');box.textContent='';
   for(const a of ASPK){const[w,h]=ASP[a];const l=document.createElement('label');l.className='check';const i=document.createElement('input');i.type='checkbox';i.id='ea_'+a.replace(':','x');i.checked=P.exp.aspects.includes(a);
@@ -2831,9 +2834,14 @@ async function runExport(){
     A.mon.gain.value=1;A.fade.gain.cancelScheduledValues(0);A.fade.gain.value=1;applyAudio(tgt());expSummary();renderSources();dirty=true;$('#saveAll').hidden=results.filter(r=>!r.saved).length<2}
 }
 const TM={seek:0,upload:0,draw:0,overlay:0,encode:0,n:0};
-async function seekFrame(t){
-  const t0=performance.now();vid.currentTime=t;await once(vid,'seeked');
-  await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r()}};vid.requestVideoFrameCallback(f);setTimeout(f,60)});
+async function seekFrame(t,fps){
+  // Asks for the MIDDLE of the frame's time slot, so tiny rounding errors cannot land on the previous frame,
+  // then waits until the video really shows a frame from that slot.
+  const t0=performance.now(),half=.5/(fps||30);
+  await new Promise(res=>{let done=false,tm;
+    const fin=()=>{if(!done){done=true;clearTimeout(tm);res()}};
+    const cb=(now,m)=>{if(done)return;if(Math.abs(m.mediaTime-t)<=half)fin();else vid.requestVideoFrameCallback(cb)};
+    vid.requestVideoFrameCallback(cb);tm=setTimeout(fin,250);vid.currentTime=t+half});
   TM.seek+=performance.now()-t0;
 }
 /* ---------- fast export: read the MP4 ourselves, decode frames with WebCodecs (no seeking, no skipped frames) ---------- */
@@ -2962,23 +2970,23 @@ async function exportJob(job,box){
     if(ds.length>5){ds.sort((a,b)=>a-b);const f=1/ds[ds.length>>1];src.fps=[23.976,24,25,29.97,30,50,59.94,60].reduce((a,b)=>Math.abs(b-f)<Math.abs(a-f)?b:a)}
     seq+=cd*1e6;done+=cd;
   }}
-  if(fastP)await fastP
+  if(fastP){for(const o of outs)o.st.textContent='Finishing the picture';await fastP}
   if(aerr)throw aerr;
   /* pass 2 (frame-accurate): step through every frame, so nothing is skipped no matter how slow the machine is */
   if(accurate){let seq=0,done=0;
     for(const c of job.clips){const src=srcById(c.src);const cd=c.out-c.in;const fps=fpsOf(src);
       if(cur.src!==src.id){cur.src=src.id;vid.src=src.url;await once(vid,'loadeddata')}
       for(let k=0;;k++){const rel=k/fps;if(rel>=cd-1e-4)break;
-        await seekFrame(c.in+rel);
+        await seekFrame(c.in+rel,fps);
         for(const o of outs)while(o.enc.encodeQueueSize>6)await new Promise(r=>setTimeout(r,5));
         renderOuts(outs,c,src,rel,cd,Math.round(seq+rel*1e6));frames++;
         if(k%3===0)prog(.3+.7*(done+rel)/total,'Rendering frames')}
       seq+=cd*1e6;done+=cd}
     }
   recSink=null;const T1=performance.now();
-  for(const o of outs){o.st.textContent='Finishing';await o.enc.flush();o.enc.close()}
-  if(aenc){await aenc.flush();aenc.close()}
-  for(const o of outs){if(o.err)throw o.err;o.mux.finalize();const blob=new Blob([o.target.buffer],{type:'video/mp4'});
+  for(let i=0;i<outs.length;i++){const o=outs[i];o.bar.style.width='100%';o.st.textContent=`Finishing: encoding the last frames (${i+1} of ${outs.length})`;await new Promise(r=>setTimeout(r,20));await o.enc.flush();o.enc.close()}
+  if(aenc){for(const o of outs)o.st.textContent='Finishing: sound';await aenc.flush();aenc.close()}
+  for(const o of outs){if(o.err)throw o.err;o.st.textContent='Finishing: writing the file';await new Promise(r=>setTimeout(r,20));o.mux.finalize();const blob=new Blob([o.target.buffer],{type:'video/mp4'});
     const r={fname:o.fname,blob,saved:false};results.push(r);window.__exports=results;
     o.bar.style.width='100%';const mb=(blob.size/1048576).toFixed(1);
     o.st.textContent=`${mb} MB, ${dur(total)}${o.warn?'. Fallback codec used: may not open in QuickTime':''}`;
