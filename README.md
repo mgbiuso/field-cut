@@ -56,3 +56,6 @@ Open `guide/field-cut-guide.html` (also copied to Downloads as "Field Cut Step b
 ## Still to test
 - Wi-Fi-off run yourself: turn Wi-Fi off, open the page, then load, mark, grade and export.
 - Safari (optional). Fast export needs a newer Safari. If it cannot run, it falls back to the slower backup mode.
+
+## New layout (Nov. 4, 2026)
+The window now has a timeline along the bottom (source strip with sound waveform on top, your clip order below it). Export lives behind the **Export...** button. Undo and Redo are in the header (Cmd+Z, Shift+Cmd+Z). The earlier layout is kept as `index-classic.html`. The step-by-step guide still shows the earlier layout and needs new pictures.

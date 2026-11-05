@@ -31,3 +31,11 @@ Built from `original/index.html` (3,018 lines, 1 MB). Line numbers are for the w
 
 - **Crossfade export** (join mode only): search `crossfade export: decode two clips at once`. `fastFrames` yields decoded frames, `fastCrossfade` pairs the end of a clip with the start of the next, `renderBlend` draws both and mixes them. Sound: `openMix` and `emitMix` in `makeAudioSink` keep each clip's end and mix it into the next clip's start. Backup (frame-by-frame) mode does not crossfade; it uses straight cuts and shows a message.
 - **Trim and Play joined**: search `trim a saved clip`.
+
+## New layout (Nov. 4, 2026, evening)
+- `index.html` is the new layout. `index-classic.html` is the layout from before the redesign (same features, kept for comparison). The picture engine, export and project code are shared in spirit but the two files are separate copies.
+- Header: Undo, Redo, Load footage, Save/Open project, Shortcuts, **Export...** (opens the export window `#expModal`).
+- Bottom **timeline** (`#tl`): top lane = source strip with waveform (`#scrub`, `drawScrub`), bottom lane = sequence of ticked clips in play order (`#seq`, `drawSeq`, `seqLayout`). Drag the bar above it (`#split`) to resize; height is remembered in localStorage `fc_tlh`.
+- Sequence lane: drag a block to reorder, drag a block edge to trim, crossfade overlaps are drawn hatched. Source lane: drag the edge of the selected clip to trim.
+- Colors: black panels, forest green accent, vintage cream (Out marker, title), navy (placeholders and one clip color). Record dot stays red.
+- Undo/redo: search `undo and redo`. Waveform: search `computePeaks`.

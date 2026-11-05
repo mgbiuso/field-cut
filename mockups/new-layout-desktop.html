@@ -1,0 +1,129 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Field Cut: new layout (desktop mockup)</title>
+<style>
+:root{--bg:#0b0b0c;--panel:#151517;--panel2:#1b1b1e;--line:#2a2a2e;--text:#e9e9ec;--dim:#8d8d96;--gold:#5aa874;--green:#5aa874;--red:#efe6cf}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.35 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 11px;cursor:pointer}
+button:hover{border-color:#44444a}button.pri{background:#2f6a46;color:#efe6cf;border-color:#5aa874;font-weight:700}
+:root{--tlh:250px}.app{display:grid;grid-template-rows:48px 1fr 9px var(--tlh);height:100vh;min-height:640px}
+header{display:flex;align-items:center;gap:8px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+.logo{font-weight:800;letter-spacing:.08em}.logo{color:#efe6cf}.logo i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#e5675a;box-shadow:0 0 8px #e5675a99;margin-right:8px}
+.ev{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;width:200px;color:var(--text)}
+.sp{flex:1}.sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.mid{display:grid;grid-template-columns:190px 1fr 300px;min-height:0}
+.col{background:var(--panel);overflow:hidden;min-height:0}.left{border-right:1px solid var(--line)}.right{border-left:1px solid var(--line);overflow-y:auto}.looks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:2px 14px 12px}.look{font-size:11px;color:var(--dim)}.look i{display:block;height:44px;border-radius:6px;border:2px solid transparent;margin-bottom:3px}.look.on i{border-color:var(--gold)}.look.on{color:var(--text)}.scope{margin:0 14px 10px;height:52px;border-radius:6px;background:linear-gradient(90deg,transparent 0 6%,#0000 6%),repeating-linear-gradient(90deg,#8d8d96 0 3px,transparent 3px 6px);-webkit-mask:linear-gradient(0deg,#000 0 60%,transparent);border:1px solid var(--line);background-color:#0b0b0c;opacity:.8}
+h3{margin:0;padding:11px 14px 8px;font-size:11px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;font-weight:600}
+.src{display:flex;gap:9px;margin:0 10px 8px;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}.src.sel{border-color:var(--gold)}
+.th{width:54px;height:32px;border-radius:4px;flex:none}.src b{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px}.src small{color:var(--dim)}
+.add{margin:6px 10px;width:calc(100% - 20px);border-style:dashed;color:var(--dim)}
+.stage{display:grid;grid-template-rows:auto 1fr auto;min-width:0;background:var(--bg)}
+.tools{display:flex;gap:6px;align-items:center;padding:8px 12px}.seg{display:flex}.seg button{border-radius:0;margin-left:-1px}.seg button:first-child{border-radius:6px 0 0 6px;margin:0}.seg button:last-child{border-radius:0 6px 6px 0}.seg .on{color:var(--gold);border-color:var(--gold);position:relative}
+.view{display:flex;align-items:center;justify-content:center;padding:4px 12px;min-height:0}
+.pic{height:100%;max-height:100%;aspect-ratio:16/9;max-width:100%;border:2px solid var(--gold);border-radius:3px;background:linear-gradient(120deg,#17402b,#e8dcc0 42%,#1c3566 72%,#0b0b0c);position:relative;display:flex;align-items:flex-end;justify-content:flex-start}
+.pic span{margin:10px;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:4px;font-size:11px}
+.transport{display:flex;gap:6px;align-items:center;padding:8px 12px;flex-wrap:wrap}.tc{font:600 20px ui-monospace,Menlo,monospace;margin-right:8px}
+.grp{display:flex;gap:6px;padding-left:10px;margin-left:4px;border-left:1px solid var(--line)}
+.in{color:var(--green)}.out{color:var(--red)}
+.tabs{display:flex;border-bottom:1px solid var(--line)}.tabs button{flex:1;border:0;border-radius:0;background:none;padding:11px 0;color:var(--dim)}.tabs .on{color:var(--gold);box-shadow:inset 0 -2px var(--gold)}
+.sel-head{padding:10px 14px;background:var(--panel2);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.row{display:grid;grid-template-columns:90px 1fr 40px;gap:8px;align-items:center;padding:6px 14px;color:var(--dim)}.row div{height:4px;background:#2c2c31;border-radius:2px;position:relative}.row div:after{content:"";position:absolute;left:50%;top:-4px;width:12px;height:12px;border-radius:50%;background:var(--gold);transform:translateX(-50%)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}.chips button{padding:4px 9px;border-radius:14px}
+/* timeline */
+.split{background:var(--line);cursor:row-resize;position:relative;touch-action:none}.split:after{content:'';position:absolute;left:50%;top:3px;width:56px;height:3px;margin-left:-28px;border-radius:2px;background:var(--dim)}.split:hover,.split.drag{background:#44444a}
+.tl{background:var(--panel);display:grid;grid-template-rows:auto 1fr 1fr;min-height:0}
+.tlh{display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:1px solid var(--line)}.tlh b{font-size:11px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;font-weight:600}
+.lane{position:relative;margin:6px 14px 0 120px;border-radius:6px;background:#0b0b0c}.clip{position:absolute;inset:0;overflow:hidden;border-radius:6px}
+.lbl{position:absolute;left:-108px;top:2px;width:100px;color:var(--dim);font-size:11px;line-height:1.2}
+.lane.src .thumbs{position:absolute;left:0;right:0;top:0;height:42%;background:repeating-linear-gradient(90deg,#1b3a2a 0 54px,#cfc3a0 54px 108px,#16294a 108px 162px)}
+.wave{position:absolute;left:0;right:0;top:42%;bottom:18%;background:repeating-linear-gradient(90deg,#9a9aa4 0 2px,transparent 2px 4px);-webkit-mask:linear-gradient(0deg,transparent 0,#000 25%,#000 75%,transparent 100%);opacity:.7}
+.band{position:absolute;bottom:0;height:18%;background:rgba(90,168,116,.5)}.gold{position:absolute;top:42%;bottom:18%;background:rgba(90,168,116,.2)}
+.mark{position:absolute;top:0;bottom:0;width:2px}.play{position:absolute;top:0;bottom:0;width:2px;background:#fff}
+.lane.seq{display:flex;align-items:stretch;padding:4px 0 4px 0;background:#0e0e10}
+.blk{position:relative;border-radius:6px;padding:6px 9px;overflow:hidden;border:2px solid transparent;cursor:grab;display:flex;flex-direction:column;justify-content:space-between}
+.blk b{font-size:12px;text-shadow:0 1px 2px #000}.blk small{color:#ddd;text-shadow:0 1px 2px #000}.blk.sel{border-color:var(--gold)}
+.blk.a{background:linear-gradient(120deg,#1f4a33,#2f6a46)}.blk.b{background:linear-gradient(120deg,#2f6a46,#1a2f55)}.blk.c{background:linear-gradient(120deg,#1a2f55,#2a4a80)}
+.xf{width:34px;margin:0 -17px;z-index:2;background:repeating-linear-gradient(135deg,rgba(255,255,255,.35) 0 4px,rgba(255,255,255,.08) 4px 8px);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;border:1px dashed #fff8}
+.dragtip{position:absolute;right:14px;bottom:8px;color:var(--dim);font-size:11px}
+.mini{font-size:12px;padding:4px 9px}
+/* export dialog */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9}.scrim.on{display:flex}
+.dlg{width:460px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:0 20px 60px #000}
+.dlg h2{margin:0 0 12px;font-size:16px}.f{display:grid;grid-template-columns:130px 1fr;gap:8px;align-items:center;margin:8px 0}.f label{color:var(--dim)}
+select,input[type=text]{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
+.sum{margin:12px 0;padding:10px 12px;border-left:3px solid var(--gold);background:var(--panel2);color:var(--dim)}
+.note{margin:12px 10px;background:#1a2f55;border:1px solid var(--gold);color:#efe6cf;padding:8px 10px;border-radius:8px;font-size:11px}
+</style></head><body>
+<div class="app">
+ <header>
+  <span class="logo"><i></i>FIELD CUT</span><input class="ev" value="Election Night" aria-label="Event name">
+  <span class="sep"></span><button title="Undo">↶ Undo</button><button title="Redo">↷ Redo</button>
+  <span class="sp"></span>
+  <button>Load footage</button><button>Open project</button><button>Save project</button><button>Shortcuts</button>
+  <span class="sep"></span><button class="pri" id="exp">Export…</button>
+ </header>
+ <div class="mid">
+  <aside class="col left"><h3>Footage</h3>
+   <div class="src sel"><div class="th" style="background:linear-gradient(120deg,#1b3a2a,#d9cba8)"></div><div><b>Darializa Entrance.MP4</b><small>30.0s · 1080p</small></div></div>
+   <div class="src"><div class="th" style="background:linear-gradient(120deg,#2a4a80,#0b0b0c)"></div><div><b>IMG_3470 2.mov</b><small>8.7s · portrait</small></div></div>
+   <button class="add">+ Add more footage</button>
+  <div class="note">MOCKUP only. Drag the bar above the timeline to resize it (double-click resets). Click Export to see the export window. Nothing here edits video.</div>
+  </aside>
+  <main class="stage">
+   <div class="tools"><div class="seg"><button class="on">16:9</button><button>9:16</button><button>4:5</button><button>1:1</button></div>
+    <div class="seg"><button class="on">Full + guide</button><button>Output</button></div><span class="sp"></span>
+    <button class="mini">Before / after</button><button class="mini">Zebras</button><button class="mini">Safe zones</button></div>
+   <div class="view"><div class="pic"><span>1920x1080</span></div></div>
+   <div class="transport"><span class="tc">00:00:11:29</span>
+    <button>-1s</button><button>-1f</button><button class="pri">Play</button><button>+1f</button><button>+1s</button>
+    <div class="grp"><button class="in">In</button><button class="out">Out</button><button class="pri">Add clip</button></div>
+    <div class="grp"><button>Start here</button><button>End here</button></div>
+    <div class="grp"><button>▶ Play joined</button></div></div>
+  </main>
+  <aside class="col right">
+   <div class="sel-head"><span>Selected: <b>Clip 02</b> · 4.0s</span><button class="mini">Back to source</button></div>
+   <div class="tabs"><button class="on">Color</button><button>Frame</button><button>Audio</button><button>Text</button></div>
+   <h3>Scope</h3><div class="scope"></div>
+   <h3>Quick fix</h3><div class="chips"><button>Auto</button><button>Dim room</button><button>Warm bulbs</button><button>Stage lights</button><button>iPhone HDR</button><button>Reset</button></div>
+   <h3>Look</h3><div class="looks">
+    <div class="look on"><i style="background:linear-gradient(120deg,#6a6a5a,#cfc3a0)"></i>Natural</div>
+    <div class="look"><i style="background:linear-gradient(120deg,#3c5a2a,#d8c079)"></i>A1 Golden green</div>
+    <div class="look"><i style="background:linear-gradient(120deg,#2a5a58,#d8c079)"></i>A2 Golden teal</div>
+    <div class="look"><i style="background:linear-gradient(120deg,#2a4a6a,#c9d6dc)"></i>A3 Cool alpine</div>
+    <div class="look"><i style="background:linear-gradient(120deg,#1a2f6a,#7a8fc0)"></i>A4 Blue hour</div>
+    <div class="look"><i style="background:linear-gradient(120deg,#14143a,#9a5a8a)"></i>A5 Night city</div></div>
+   <h3>Light</h3>
+   <div class="row">Exposure<div></div><span>0.0</span></div><div class="row">Contrast<div></div><span>0</span></div><div class="row">Highlights<div></div><span>0</span></div><div class="row">Shadows<div></div><span>0</span></div>
+  </aside>
+ </div>
+ <div class="split" id="split" title="Drag up or down to resize the timeline"></div>
+ <section class="tl">
+  <div class="tlh"><b>Timeline</b><span style="color:var(--dim)">Source lane: find the good parts. Sequence lane: your finished order.</span><span class="sp"></span>
+   <span style="color:var(--dim)">Between clips</span><div class="seg"><button class="on mini">Straight cut</button><button class="mini">Crossfade</button></div>
+   <select style="width:auto" class="mini"><option>0.5 s</option><option>1 s</option></select><span><b style="color:var(--text);letter-spacing:0;text-transform:none;font-size:13px">9.0 s</b> total</span></div>
+  <div class="lane src"><div class="lbl">SOURCE<br>Darializa Entrance</div><div class="clip"><div class="thumbs"></div><div class="wave"></div>
+   <div class="gold" style="left:7%;width:10%"></div><div class="gold" style="left:40%;width:13%"></div><div class="gold" style="left:73%;width:10%"></div>
+   <div class="band" style="left:7%;width:10%"></div><div class="band" style="left:40%;width:13%"></div><div class="band" style="left:73%;width:10%"></div>
+   <div class="mark" style="left:20%;background:var(--green)"></div><div class="mark" style="left:30%;background:var(--red)"></div><div class="play" style="left:44%"></div></div></div>
+  <div class="lane seq" style="margin-bottom:8px"><div class="lbl">SEQUENCE<br>3 clips</div>
+   <div class="blk a" style="flex:3"><b>Clip 01</b><small>3.0 s</small></div><div class="xf">fade</div>
+   <div class="blk b sel" style="flex:4"><b>Clip 02</b><small>4.0 s · selected</small></div><div class="xf">fade</div>
+   <div class="blk c" style="flex:3"><b>Clip 03</b><small>3.0 s</small></div>
+   <div class="dragtip">Drag a block to reorder. Drag an edge to trim.</div></div>
+ </section>
+</div>
+<div class="scrim" id="scrim"><div class="dlg"><h2>Export</h2>
+ <div class="f"><label>Sizes</label><div><label><input type="checkbox" checked> 16:9</label> &nbsp;<label><input type="checkbox"> 9:16</label> &nbsp;<label><input type="checkbox"> 4:5</label> &nbsp;<label><input type="checkbox"> 1:1</label></div></div>
+ <div class="f"><label>Quality</label><select><option>High, 16 Mbps</option></select></div>
+ <div class="f"><label>Clips</label><select><option>Join ticked clips into one video</option></select></div>
+ <div class="f"><label>Between clips</label><select><option>Crossfade (picture and sound)</option></select></div>
+ <div class="f"><label>Length</label><select><option>0.5 seconds</option></select></div>
+ <div class="sum">3 clips, 9.0s total, 1 size: 1 file. Takes about 15s. Keep this window open until it finishes.</div>
+ <div style="display:flex;justify-content:flex-end;gap:8px"><button id="cx">Cancel</button><button class="pri">Export</button></div></div></div>
+<script>exp.onclick=()=>scrim.classList.add('on');cx.onclick=()=>scrim.classList.remove('on');scrim.onclick=e=>{if(e.target===scrim)scrim.classList.remove('on')};
+document.querySelectorAll('.blk').forEach(b=>b.onclick=()=>{document.querySelectorAll('.blk').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')});
+(function(){const root=document.documentElement,sp=document.getElementById('split');const saved=+localStorage.getItem('mock_tlh');if(saved)root.style.setProperty('--tlh',saved+'px');
+let drag=false;sp.addEventListener('pointerdown',e=>{e.preventDefault();document.body.style.userSelect='none';drag=true;sp.classList.add('drag');sp.setPointerCapture(e.pointerId)});
+sp.addEventListener('pointermove',e=>{if(!drag)return;const h=Math.max(150,Math.min(innerHeight*.65,innerHeight-e.clientY-4));root.style.setProperty('--tlh',h+'px');localStorage.setItem('mock_tlh',Math.round(h))});
+sp.addEventListener('pointerup',()=>{document.body.style.userSelect='';drag=false;sp.classList.remove('drag')});sp.addEventListener('dblclick',()=>{root.style.setProperty('--tlh','250px');localStorage.removeItem('mock_tlh')})})();
+</script>
+</body></html>

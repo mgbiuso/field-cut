@@ -1,0 +1,45 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Field Cut: new layout (mobile mockup)</title>
+<style>
+:root{--bg:#0b0b0c;--panel:#151517;--panel2:#1b1b1e;--line:#2a2a2e;--text:#e9e9ec;--dim:#8d8d96;--gold:#5aa874;--green:#5aa874;--red:#efe6cf}
+*{box-sizing:border-box}html,body{margin:0;background:#050506;color:var(--text);font:14px/1.35 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+button.pri{background:#2f6a46;color:#efe6cf;border-color:#5aa874;font-weight:700}
+.phone{max-width:430px;margin:0 auto;height:100vh;min-height:700px;background:var(--bg);display:grid;grid-template-rows:auto auto 1fr 58px;position:relative}
+header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--panel);border-bottom:1px solid var(--line)}.logo{font-weight:800;letter-spacing:.08em;flex:1}.logo{color:#efe6cf}.logo i{display:inline-block;width:9px;height:9px;border-radius:50%;background:#e5675a;box-shadow:0 0 8px #e5675a99;margin-right:7px}
+.pic{margin:10px 12px 0;aspect-ratio:16/9;border:2px solid var(--gold);border-radius:4px;background:linear-gradient(120deg,#17402b,#e8dcc0 42%,#1c3566 72%,#0b0b0c)}
+.sheet{padding:10px 12px;overflow:auto}.panel{display:none}.panel.on{display:block}
+.tc{font:600 18px ui-monospace,Menlo,monospace}.line{display:flex;gap:6px;align-items:center;margin:8px 0;flex-wrap:wrap}
+.lane{position:relative;height:84px;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,#1b3a2a 0 40px,#cfc3a0 40px 80px,#16294a 80px 120px);margin:8px 0}
+.lane:after{content:"";position:absolute;left:0;right:0;top:42px;bottom:0;background:linear-gradient(#0009,#000c)}
+.gold{position:absolute;bottom:0;height:12px;background:var(--gold);z-index:2}.ph{position:absolute;top:0;bottom:0;width:2px;background:#fff;left:44%;z-index:3}
+.seq{display:flex;gap:3px;margin:8px 0}.blk{border-radius:8px;padding:10px 8px;min-height:64px;border:2px solid transparent}.blk small{display:block;color:#ddd}
+.blk.a{flex:3;background:linear-gradient(120deg,#1f4a33,#2f6a46)}.blk.b{flex:4;background:linear-gradient(120deg,#2f6a46,#1a2f55);border-color:var(--gold)}.blk.c{flex:3;background:linear-gradient(120deg,#1a2f55,#2a4a80)}
+.row{display:grid;grid-template-columns:90px 1fr 34px;gap:8px;align-items:center;padding:8px 0;color:var(--dim)}.row div{height:4px;background:#2c2c31;border-radius:2px;position:relative}.row div:after{content:"";position:absolute;left:50%;top:-6px;width:16px;height:16px;border-radius:50%;background:var(--gold);transform:translateX(-50%)}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--panel);border-top:1px solid var(--line)}.nav button{border:0;border-radius:0;background:none;color:var(--dim);font-size:12px;padding:8px 0}.nav .on{color:var(--gold);box-shadow:inset 0 2px var(--gold)}
+.lbl{color:var(--dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-top:6px}
+select{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px}
+.sum{margin:12px 0;padding:10px 12px;border-left:3px solid var(--gold);background:var(--panel2);color:var(--dim)}
+.note{background:#1a2f55;border-bottom:1px solid var(--gold);color:#efe6cf;padding:6px 12px;font-size:12px}
+</style></head><body><div class="phone">
+ <div class="note">MOCKUP only. Tap the bottom tabs.</div>
+ <header><span class="logo"><i></i>FIELD CUT</span><button>↶</button><button>↷</button></header>
+ <div style="overflow:auto"><div class="pic"></div>
+  <div class="sheet">
+   <section class="panel on" id="p0"><div class="line"><span class="tc">00:00:11:29</span><button>-1s</button><button class="pri">Play</button><button>+1s</button></div>
+    <div class="lbl">Source: Darializa Entrance</div><div class="lane"><div class="gold" style="left:7%;width:10%"></div><div class="gold" style="left:40%;width:13%"></div><div class="gold" style="left:73%;width:10%"></div><div class="ph"></div></div>
+    <div class="line"><button style="color:var(--green)">In</button><button style="color:var(--red)">Out</button><button class="pri">Add clip</button></div>
+    <div class="line"><button>Start here</button><button>End here</button></div></section>
+   <section class="panel" id="p1"><div class="lbl">Sequence · 3 clips · 9.0 s</div><div class="seq"><div class="blk a"><b>Clip 01</b><small>3.0 s</small></div><div class="blk b"><b>Clip 02</b><small>4.0 s</small></div><div class="blk c"><b>Clip 03</b><small>3.0 s</small></div></div>
+    <div class="line"><button>▲</button><button>▼</button><button>✕</button><button class="pri">▶ Play joined</button></div>
+    <div class="lbl">Between clips</div><select><option>Crossfade, 0.5 s</option><option>Straight cut</option></select></section>
+   <section class="panel" id="p2"><div class="lbl">Selected: Clip 02</div><div class="line"><button class="pri">Auto</button><button>Dim room</button><button>Warm bulbs</button></div>
+    <div class="lbl">Look</div><div class="line"><button class="pri">Natural</button><button>A1 Golden green</button><button>A2 Golden teal</button><button>A3 Cool alpine</button><button>A4 Blue hour</button><button>A5 Night city</button></div>
+    <div class="row">Exposure<div></div><span>0.0</span></div><div class="row">Contrast<div></div><span>0</span></div><div class="row">Shadows<div></div><span>0</span></div></section>
+   <section class="panel" id="p3"><div class="lbl">Footage</div><button style="width:100%;text-align:left;margin:6px 0">Darializa Entrance.MP4 · 30.0s</button><button style="width:100%;text-align:left">IMG_3470 2.mov · 8.7s</button></section>
+   <section class="panel" id="p4"><div class="lbl">Sizes</div><div class="line"><label><input type="checkbox" checked> 16:9</label><label><input type="checkbox"> 9:16</label><label><input type="checkbox"> 4:5</label><label><input type="checkbox"> 1:1</label></div>
+    <div class="lbl">Clips</div><select><option>Join ticked clips into one video</option></select><div class="lbl">Between clips</div><select><option>Crossfade, 0.5 s</option></select>
+    <div class="sum">3 clips, 9.0s total, 1 file. Takes about 15s.</div><button class="pri" style="width:100%">Export</button></section>
+  </div></div>
+ <nav class="nav"><button class="on" data-p="0">Cut</button><button data-p="1">Sequence</button><button data-p="2">Fix</button><button data-p="3">Footage</button><button data-p="4">Export</button></nav>
+</div><script>document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('on',String(i)===b.dataset.p))});</script></body></html>
