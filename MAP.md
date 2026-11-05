@@ -28,3 +28,6 @@ Built from `original/index.html` (3,018 lines, 1 MB). Line numbers are for the w
 - **Save / Open project**: search `project file (Save project / Open project)` in `index.html`.
 - **Fast export**: search `fast export: read the MP4 ourselves`. `readMp4` reads the frame list, `fastDecodeClip` decodes one clip with WebCodecs, `exportJob` runs it alongside the real-time sound recording. The old frame-by-frame mode (`seekFrame`, "pass 2") is kept only as the automatic backup.
 - The Real time mode and the Speed menu were removed.
+
+- **Crossfade export** (join mode only): search `crossfade export: decode two clips at once`. `fastFrames` yields decoded frames, `fastCrossfade` pairs the end of a clip with the start of the next, `renderBlend` draws both and mixes them. Sound: `openMix` and `emitMix` in `makeAudioSink` keep each clip's end and mix it into the next clip's start. Backup (frame-by-frame) mode does not crossfade; it uses straight cuts and shows a message.
+- **Trim and Play joined**: search `trim a saved clip`.

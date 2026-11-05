@@ -315,6 +315,8 @@ kbd{font:500 12px var(--mono);background:var(--raise);border:1px solid var(--lin
           <h2>Settings</h2>
           <div class="field"><label for="expQ">Quality</label><select id="expQ"><option value="10">Standard, 10 Mbps (smaller files)</option><option value="16">High, 16 Mbps</option><option value="24">Master, 24 Mbps</option></select></div>
           <div class="field"><label for="expMode">Clips</label><select id="expMode"><option value="each">Each ticked clip as its own file</option><option value="join">Join ticked clips into one video</option></select></div>
+          <div class="field" id="xfField" hidden><label for="expXf">Between clips</label><select id="expXf"><option value="0">Straight cut</option><option value="1">Crossfade (picture and sound)</option></select></div>
+          <div class="field" id="xfLenField" hidden><label for="expXfd">Crossfade length</label><select id="expXfd"><option value="0.3">0.3 seconds</option><option value="0.5">0.5 seconds</option><option value="1">1 second</option><option value="2">2 seconds</option></select><p class="hint">The blend shows in the exported video. Play joined still shows straight cuts. The finished video is shorter by one blend length for each join.</p></div>
           <label class="check"><input type="checkbox" id="expListen"><span>Play sound while exporting</span></label>
           <p class="note">A 30 second clip takes about 30 seconds, for every size at once. Keep this tab open and in front until it finishes. Every frame is kept.</p>
           <button class="btn primary" id="expBtn" type="button">Export ticked clips</button>
@@ -2297,7 +2299,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- state ---------- */
 let sources=[], clips=[], cur={src:null,clip:null}, marks={in:null,out:null};
 let view={aspect:'16:9',mode:'guide',compare:false,zebra:false,safe:false,tab:'color'};
-let P={event:'Election Night',wm:{on:false,text:'Video: Mike Biuso',pos:'br',size:3,op:85},exp:{aspects:['16:9'],q:'16',mode:'each',listen:false}};
+let P={event:'Election Night',wm:{on:false,text:'Video: Mike Biuso',pos:'br',size:3,op:85},exp:{aspects:['16:9'],q:'16',mode:'each',listen:false,xf:false,xfd:.5}};
 let gradeClip=null, exporting=false, playingClip=null, dirty=true, results=[];
 const vid=$('#vid'), tv=$('#tv');
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -2817,21 +2819,31 @@ function ctxTimeFor(perfT){
 }
 /* audio windows: each clip maps a span of context frames to a place on the output timeline */
 function makeAudioSink(aenc,sr){
-  const wins=[];
+  const wins=[];let carry=null;
+  const feedMix=(m,w)=>{const a=Math.max(m.f,w.f0),b=Math.min(m.f+m.L.length,w.f1);if(b<=a)return;const o=a-m.f;w.L.set(m.L.subarray(o,o+b-a),a-w.f0);w.R.set(m.R.subarray(o,o+b-a),a-w.f0);w.got=Math.max(w.got,b)};
   const feed=(m,w)=>{const a=Math.max(m.f,w.f0),b=Math.min(m.f+m.L.length,w.f1);if(b<=a)return;
     const n=b-a,o=a-m.f;const buf=new Float32Array(n*2);buf.set(m.L.subarray(o,o+n),0);buf.set(m.R.subarray(o,o+n),n);
     const ad=new AudioData({format:'f32-planar',sampleRate:sr,numberOfFrames:n,numberOfChannels:2,timestamp:Math.round(w.us+(a-w.f0)/sr*1e6),data:buf});
     aenc.encode(ad);ad.close();w.got=Math.max(w.got,b)};
   return{
     open(f0,frames,us){const w={f0,f1:f0+frames,us,got:f0};wins.push(w);for(const m of recBuf)feed(m,w);return w},
-    push(m){for(const w of wins)if(w.got<w.f1)feed(m,w)},
+    /* crossfade mode: keep the whole clip's sound, blend its start with the previous clip's saved end, keep its own end for the next clip */
+    openMix(f0,frames,us){const w={f0,f1:f0+frames,us,got:f0,mix:true,L:new Float32Array(frames),R:new Float32Array(frames)};wins.push(w);for(const m of recBuf)feedMix(m,w);return w},
+    emitMix(w,nHead,nTail){const n=w.f1-w.f0,L=w.L,R=w.R;const idx=wins.indexOf(w);if(idx>=0)wins.splice(idx,1);
+      const h=Math.min(nHead,carry?carry.L.length:0,n);
+      if(carry&&h>0)for(let k=0;k<h;k++){const x=k/h,ga=Math.cos(x*Math.PI/2),gb=Math.sin(x*Math.PI/2);L[k]=carry.L[k]*ga+L[k]*gb;R[k]=carry.R[k]*ga+R[k]*gb}
+      const t=Math.min(nTail,n-h),end=n-t;
+      for(let k=0;k<end;k+=48000){const m=Math.min(48000,end-k);const buf=new Float32Array(m*2);buf.set(L.subarray(k,k+m),0);buf.set(R.subarray(k,k+m),m);
+        const ad=new AudioData({format:'f32-planar',sampleRate:sr,numberOfFrames:m,numberOfChannels:2,timestamp:Math.round(w.us+k/sr*1e6),data:buf});aenc.encode(ad);ad.close()}
+      carry=t>0?{L:L.slice(end,n),R:R.slice(end,n)}:null},
+    push(m){for(const w of wins)if(w.got<w.f1)(w.mix?feedMix:feed)(m,w)},
     async close(w){const t=performance.now();while(w.got<w.f1&&performance.now()-t<1500)await new Promise(r=>setTimeout(r,20));if(w.got<w.f1)w.f1=w.got}
   };
 }
 function expSummary(){const n=clips.filter(c=>c.on).length;const t=clips.filter(c=>c.on).reduce((a,c)=>a+c.out-c.in,0);const k=P.exp.aspects.length;const files=P.exp.mode==='join'?k:n*k;
   // each finished file is built in memory; about 1.5x the file size is needed while it is written
   const needGB=k*t*(+P.exp.q*1e6)/8/1e9*1.5,limitGB=(navigator.deviceMemory||8)*.25,big=n&&needGB>limitGB,slow=needGB>limitGB?1.4:1.1; // measured: 2 sizes x 5 min took 1.08x, 3 sizes x 5 min on an 8 GB Mac took 1.39x
-  $('#expSum').textContent=n?`${n} clip${n>1?'s':''}, ${dur(t)} total, ${k} size${k>1?'s':''}: ${files} file${files>1?'s':''}. Takes about ${dur(t*slow+n*1.5)}.`+(big?` Large export: needs about ${needGB.toFixed(1)} GB of memory. Close other apps first, or tick fewer sizes. Two sizes at a time runs smoothly.`:''):'Tick at least one clip in the Clips list.';
+  $('#expSum').textContent=n?`${n} clip${n>1?'s':''}, ${dur(t-(P.exp.mode==='join'&&P.exp.xf?xfDs(clips.filter(c=>c.on)).reduce((a,b)=>a+b,0):0))} total, ${k} size${k>1?'s':''}: ${files} file${files>1?'s':''}. Takes about ${dur(t*slow+n*1.5)}.`+(big?` Large export: needs about ${needGB.toFixed(1)} GB of memory. Close other apps first, or tick fewer sizes. Two sizes at a time runs smoothly.`:''):'Tick at least one clip in the Clips list.';
   $('#expSum').style.color=big?'var(--warn)':'';
   $('#expBtn').disabled=!n||!k||exporting}
 function buildExpAsp(){const box=$('#expAsp');box.textContent='';
@@ -2964,11 +2976,13 @@ async function exportJob(job,box){
   let frames=0;
   /* fast mode: the picture is decoded at full speed while the sound is recorded in real time (pass 1, below) */
   let fastP=null;
-  if(fast){const starts=[];let q=0;for(const c of job.clips){starts.push(q);q+=(c.out-c.in)*1e6}
-    fastP=(async()=>{for(let i=0;i<job.clips.length;i++){const c=job.clips[i];frames+=await fastDecodeClip(srcById(c.src),c,starts[i],outs)}})();fastP.catch(()=>{})}
+  let xf=P.exp.mode==='join'&&P.exp.xf&&job.clips.length>1;if(xf&&!fast){toast('Crossfade needs Fast export, which this file cannot use. Using straight cuts.',6000);xf=false}
+  const Ds=xf?xfDs(job.clips):job.clips.map(()=>0);const starts=[];{let q=0;job.clips.forEach((c,i)=>{starts.push(q);q+=(c.out-c.in-Ds[i])*1e6})}
+  if(fast){
+    fastP=(async()=>{if(xf){frames+=await fastCrossfade(job,starts,Ds,outs);return}for(let i=0;i<job.clips.length;i++){const c=job.clips[i];frames+=await fastDecodeClip(srcById(c.src),c,starts[i],outs)}})();fastP.catch(()=>{})}
   /* pass 1: play each clip in real time. Captures audio, and renders video too unless frame-accurate is on */
-  {let seq=0,done=0;
-  for(const c of job.clips){
+  {let done=0,ci=-1;
+  for(const c of job.clips){ci++;const seq=starts[ci];
     const src=srcById(c.src);const cd=c.out-c.in;
     if(cur.src!==src.id){cur.src=src.id;vid.src=src.url;await once(vid,'loadeddata')}
     applyAudio(c.s);A.fade.gain.cancelScheduledValues(0);A.fade.gain.value=fadeAt(c.s,0,cd);
@@ -2982,7 +2996,7 @@ async function exportJob(job,box){
         if(rel>=cd-.0005){finish();return}
         if(rel<-.05){vid.requestVideoFrameCallback(cb);return}
         const r0=Math.max(0,rel);
-        if(first){first=false;if(sink){const ct=ctxTimeFor(m.expectedDisplayTime||now);win=sink.open(Math.round(ct*sr),Math.round((cd-r0)*sr),seq+r0*1e6)}}
+        if(first){first=false;if(sink){const ct=ctxTimeFor(m.expectedDisplayTime||now);win=(xf?sink.openMix:sink.open)(Math.round(ct*sr),Math.round((cd-r0)*sr),seq+r0*1e6)}}
         if(lastMT!=null&&m.mediaTime>lastMT)ds.push(m.mediaTime-lastMT);lastMT=m.mediaTime;
         A.fade.gain.setTargetAtTime(fadeAt(c.s,r0,cd),AC.currentTime,.012);
         prog((done+r0)/total*(accurate?.3:1),accurate?'Recording sound':'Rendering');
@@ -2990,8 +3004,9 @@ async function exportJob(job,box){
       vid.requestVideoFrameCallback(cb);vid.play().catch(rej);
     });
     if(win)await sink.close(win);
+    if(win&&xf)sink.emitMix(win,ci>0?Math.round(Ds[ci-1]*sr):0,Math.round(Ds[ci]*sr));
     if(ds.length>5){ds.sort((a,b)=>a-b);const f=1/ds[ds.length>>1];src.fps=[23.976,24,25,29.97,30,50,59.94,60].reduce((a,b)=>Math.abs(b-f)<Math.abs(a-f)?b:a)}
-    seq+=cd*1e6;done+=cd;
+    done+=cd;
   }}
   if(fastP){for(const o of outs)o.st.textContent='Finishing the picture';await fastP}
   if(aerr)throw aerr;
@@ -3027,6 +3042,66 @@ async function saveResult(r,btn){
 }
 $('#saveAll').onclick=async()=>{for(const r of results.filter(r=>!r.saved)){const ok=await saveResult(r,null);if(!ok)break}
   $$('#jobs .job').forEach(row=>{const fn=row.querySelector('.fn').textContent;const r=results.find(x=>x.fname===fn);if(r&&r.saved){const b=row.querySelector('button');b.textContent='Saved';b.disabled=true}})};
+/* crossfade export: decode two clips at once and blend the end of one into the start of the next */
+function xfDs(list){const D=+P.exp.xfd||.5;return list.map((c,i)=>i>=list.length-1?0:Math.max(0,Math.min(D,.45*(c.out-c.in),.45*(list[i+1].out-list[i+1].in))))}
+async function* fastFrames(src,c){
+  const dm=src.dm,cd=c.out-c.in,S=dm.samples;let tgt=-1,end=-1;
+  for(let i=0;i<S.length;i++){const t=S[i].t;if(t>=c.in-1e-4&&(tgt<0||t<S[tgt].t))tgt=i;if(t<c.out-1e-4)end=i}
+  if(tgt<0||end<tgt)return;
+  let k0=tgt;while(k0>0&&!S[k0].key)k0--;
+  let err=null;const q=[];
+  const dec=new VideoDecoder({output:f=>{const rel=f.timestamp/1e6-c.in;if(rel>-1e-4&&rel<cd-1e-4)q.push({rel:Math.max(0,rel),f});else f.close()},error:e=>err=e});
+  dec.configure(dm.cfg);
+  const list=S.slice(k0,end+1);let i=0;
+  try{
+    for await(const bytes of sampleBytes(src.file,list)){
+      if(err)throw err;
+      while(dec.decodeQueueSize>8&&!q.length){await new Promise(r=>setTimeout(r,2));if(err)throw err}
+      const s=list[i++];dec.decode(new EncodedVideoChunk({type:s.key?'key':'delta',timestamp:Math.round(s.t*1e6),data:bytes}));
+      while(q.length)yield q.shift();
+    }
+    await dec.flush();if(err)throw err;
+    while(q.length)yield q.shift();
+  }finally{for(const x of q)x.f.close();try{dec.close()}catch(e){}}
+}
+async function fastCrossfade(job,starts,Ds,outs){
+  const L=job.clips,n=L.length;let frames=0;const S=new Array(n).fill(null);
+  const mk=i=>{const c=L[i],src=srcById(c.src),g=fastFrames(src,c);let pk=null;
+    return{c,src,g,used:-1,async next(){if(pk){const p=pk;pk=null;return p}const r=await g.next();return r.done?null:r.value},async look(){if(!pk){const r=await g.next();pk=r.done?null:r.value}return pk}}};
+  try{
+    for(let i=0;i<n;i++){
+      const A=S[i]||(S[i]=mk(i)),c=A.c,cd=c.out-c.in,Dn=Ds[i]||0;
+      const B=Dn>0?(S[i+1]=mk(i+1)):null;let bp=null;
+      for(;;){const a=await A.next();if(!a)break;
+        if(a.rel<=A.used+1e-4){a.f.close();continue}
+        const ts=Math.round(starts[i]+a.rel*1e6);let alpha=0;
+        if(B&&a.rel>=cd-Dn-1e-4){const tB=Math.max(0,a.rel-(cd-Dn));
+          for(;;){const nb=await B.look();if(!nb||nb.rel>tB+1e-3)break;if(bp)bp.f.close();bp=await B.next();B.used=bp.rel}
+          if(!bp){bp=await B.next();if(bp)B.used=bp.rel}
+          alpha=clamp(tB/Dn,0,1)}
+        if(bp&&B&&a.rel>=cd-Dn-1e-4)renderBlend(outs,a,A,bp,B,alpha,ts);else renderOuts(outs,c,A.src,a.rel,cd,ts,a.f);
+        a.f.close();frames++;
+        for(const o of outs)while(o.enc.encodeQueueSize>6){await new Promise(r=>setTimeout(r,2));if(o.err)throw o.err}}
+      if(bp){bp.f.close();bp=null}
+    }
+  }finally{for(const x of S)if(x){try{await x.g.return()}catch(e){}}}
+  return frames}
+function uploadF(frame,src){const fr=frame&&src.dm&&src.dm.rot?new VideoFrame(frame,{rotation:src.dm.rot}):frame;RE.upload(fr||vid);if(fr&&fr!==frame)fr.close()}
+function renderBlend(outs,a,A,b,B,alpha,ts){
+  const cA=A.c,cB=B.c,cdA=cA.out-cA.in,cdB=cB.out-cB.in;
+  const maxW=Math.max(...outs.map(o=>o.w)),maxH=Math.max(...outs.map(o=>o.h));
+  if(glExp.width!==maxW||glExp.height!==maxH){glExp.width=maxW;glExp.height=maxH}
+  uploadF(a.f,A.src);
+  for(const o of outs){RE.draw({vp:[0,maxH-o.h,o.w,o.h],crop:cropFor(A.src,cA.s,o.asp,a.rel,cdA),s:cA.s,fade:fadeAt(cA.s,a.rel,cdA),time:a.rel});
+    o.ctx.drawImage(glExp,0,0,o.w,o.h,0,0,o.w,o.h);overlays(o.ctx,o.w,o.h,o.asp,cA.s,a.rel,true)}
+  uploadF(b.f,B.src);
+  for(const o of outs){const t=o.tc||(o.tc=document.createElement('canvas'));if(t.width!==o.w||t.height!==o.h){t.width=o.w;t.height=o.h}const tx=t.getContext('2d');
+    RE.draw({vp:[0,maxH-o.h,o.w,o.h],crop:cropFor(B.src,cB.s,o.asp,b.rel,cdB),s:cB.s,fade:fadeAt(cB.s,b.rel,cdB),time:b.rel});
+    tx.drawImage(glExp,0,0,o.w,o.h,0,0,o.w,o.h);overlays(tx,o.w,o.h,o.asp,cB.s,b.rel,true);
+    o.ctx.globalAlpha=alpha;o.ctx.drawImage(t,0,0);o.ctx.globalAlpha=1;
+    const vf=new VideoFrame(o.c2,{timestamp:ts,duration:Math.round(1e6/fpsOf(A.src))});const key=ts-o.lastKey>=2e6;if(key)o.lastKey=ts;
+    o.enc.encode(vf,{keyFrame:key});vf.close()}
+}
 function renderOuts(outs,c,src,rel,cd,ts,frame){
   const maxW=Math.max(...outs.map(o=>o.w)),maxH=Math.max(...outs.map(o=>o.h));
   if(glExp.width!==maxW||glExp.height!==maxH){glExp.width=maxW;glExp.height=maxH}
@@ -3109,7 +3184,7 @@ async function openProject(file){
   if(typeof o.event==='string')P.event=o.event;
   if(o.wm&&typeof o.wm==='object')Object.assign(P.wm,o.wm);
   if(o.exp&&typeof o.exp==='object'){Object.assign(P.exp,o.exp);P.exp.aspects=(Array.isArray(P.exp.aspects)?P.exp.aspects:['16:9']).filter(a=>ASPK.includes(a));if(!P.exp.aspects.length)P.exp.aspects=['16:9']}
-  $('#eventName').value=P.event;$('#expQ').value=P.exp.q;$('#expMode').value=P.exp.mode;$('#expListen').checked=P.exp.listen;
+  $('#eventName').value=P.event;$('#expQ').value=P.exp.q;$('#expMode').value=P.exp.mode;$('#expListen').checked=P.exp.listen;$('#expXf').value=P.exp.xf?'1':'0';$('#expXfd').value=String(P.exp.xfd);syncXf();
   const prev=store.get('fc_proj')||{},keep={};let found=0,missing=0;
   pendingProj=[];
   for(const key of Object.keys(o.srcs)){
@@ -3164,7 +3239,10 @@ $('#allG').onclick=()=>{const s=tgt();if(!s)return;const g={g:clone(s.g),look:s.
 $('#ctrBtn').onclick=()=>{const s=tgt();if(!s)return;s.frame[view.aspect]={x:.5,y:.5,z:1};syncInspector();saveSoon()};
 $('#frAll').onclick=()=>{const s=tgt();if(!s)return;const f=s.frame[view.aspect];for(const a of ASPK)s.frame[a]={x:f.x,y:f.y,z:a===view.aspect?f.z:1};toast('Framing copied to all sizes');saveSoon()};
 $('#expQ').value=P.exp.q;$('#expQ').onchange=e=>{P.exp.q=e.target.value;save()};
-$('#expMode').value=P.exp.mode;$('#expMode').onchange=e=>{P.exp.mode=e.target.value;save();expSummary()};
+$('#expMode').value=P.exp.mode;$('#expMode').onchange=e=>{P.exp.mode=e.target.value;syncXf();save();expSummary()};
+function syncXf(){const j=P.exp.mode==='join';$('#xfField').hidden=!j;$('#xfLenField').hidden=!(j&&P.exp.xf)}
+$('#expXf').value=P.exp.xf?'1':'0';$('#expXf').onchange=e=>{P.exp.xf=e.target.value==='1';syncXf();save();expSummary()};
+$('#expXfd').value=String(P.exp.xfd);$('#expXfd').onchange=e=>{P.exp.xfd=+e.target.value;save();expSummary()};syncXf();
 $('#expListen').checked=P.exp.listen;$('#expListen').onchange=e=>{P.exp.listen=e.target.checked;save()};
 $('#expBtn').onclick=runExport;$('#stillBtn').onclick=saveStill;
 $('#helpBtn').onclick=()=>{$('#help').hidden=false;$('#helpClose').focus()};$('#helpClose').onclick=()=>$('#help').hidden=true;

@@ -13,6 +13,7 @@
     "Fix",
     "Size",
     "Join",
+    "Blend",
     "Export"
   ],
   "fonts": [
@@ -288,7 +289,7 @@
     {
       "title": "Join the pieces into one video",
       "minutes": 1,
-      "new": true,
+      "new": false,
       "where": "Right side, **Export** tab. The **Clips** menu.",
       "do": [
         "Open the **Clips** menu.",
@@ -296,10 +297,26 @@
         "Tick only the clips you want in it."
       ],
       "see": "One file per size. Its name ends in **_Sequence**.",
-      "tip": "Pieces play back to back with straight cuts. For a soft dip, set **Fade** in the **Frame** tab, under **Timing**. If colors differ, use **Apply to all clips** in the **Color** tab.",
+      "tip": "Pieces play back to back with straight cuts. Want a soft blend? See the next step. If colors differ, use **Apply to all clips** in the **Color** tab.",
       "image": "images/13b-join.jpg",
       "caption": "Clips menu set to Join (circled).",
       "alt": "Clips menu circled"
+    },
+    {
+      "title": "Blend the pieces with a crossfade",
+      "minutes": 1,
+      "new": true,
+      "where": "Right side, **Export** tab. Two menus appear under **Clips** after you pick Join.",
+      "do": [
+        "Open **Between clips**. Pick **Straight cut** or **Crossfade**.",
+        "For a crossfade, open **Crossfade length**. Pick a time.",
+        "Click **Export ticked clips**."
+      ],
+      "see": "Picture and sound melt from one clip into the next. The video is shorter by one blend for each join.",
+      "tip": "Start with 0.5 seconds. Shorter feels like a cut. Longer feels dreamy. **Play joined** still shows straight cuts, so check the exported file.",
+      "image": "images/13c-crossfade.jpg",
+      "caption": "Between clips and Crossfade length (circled).",
+      "alt": "Two menus circled"
     },
     {
       "title": "Make the videos",
@@ -376,6 +393,14 @@
     {
       "problem": "Play joined does nothing.",
       "fix": "Tick at least one clip on the left first. Then click **Play joined** again."
+    },
+    {
+      "problem": "I do not see the Crossfade menus.",
+      "fix": "Set the **Clips** menu to **Join ticked clips into one video** first. The crossfade menus show up under it."
+    },
+    {
+      "problem": "It says crossfade needs Fast export.",
+      "fix": "That video cannot use the fast way. The export used straight cuts. Try a clip that came straight from your camera."
     },
     {
       "problem": "It says fast export is not possible for this file.",
